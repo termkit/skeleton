@@ -1,12 +1,10 @@
-package header
+package alpha
 
 import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/termkit/skeleton/alpha/keymap"
-	"github.com/termkit/skeleton/alpha/spirit"
 	"strings"
 	"sync"
 )
@@ -15,11 +13,11 @@ import (
 type Header struct {
 	Viewport *viewport.Model
 
-	KeyMap *keymap.KeyMap
+	KeyMap *KeyMap
 
 	currentTab int
 
-	modelSpirit *spirit.ModelSpirit
+	modelSpirit *Spirit
 
 	commonHeaders       []commonHeader
 	currentSpecialStyle int
@@ -56,25 +54,25 @@ type commonHeader struct {
 	activeStyle   lipgloss.Style
 }
 
-// Define sync.Once and NewHeader should return same instance
+// Define sync.Once and newHeader should return same instance
 var (
-	once sync.Once
-	h    *Header
+	onceHeader sync.Once
+	header     *Header
 )
 
-// NewHeader returns a new Header.
-func NewHeader() *Header {
-	once.Do(func() {
-		s := spirit.NewSpirit()
+// newHeader returns a new Header.
+func newHeader() *Header {
+	onceHeader.Do(func() {
+		s := newSpirit()
 		s.SetLockTabs(false)
-		h = &Header{
+		header = &Header{
 			modelSpirit: s,
-			Viewport:    spirit.NewTerminalViewport(102, 24),
+			Viewport:    newTerminalViewport(),
 			currentTab:  0,
-			KeyMap:      keymap.NewKeyMap(),
+			KeyMap:      NewKeyMap(),
 		}
 	})
-	return h
+	return header
 }
 
 func (h *Header) SetCurrentTab(tab int) {

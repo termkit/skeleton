@@ -1,4 +1,4 @@
-package keymap
+package alpha
 
 import (
 	teakey "github.com/charmbracelet/bubbles/key"
@@ -12,31 +12,31 @@ type KeyMap struct {
 }
 
 const (
-	SwitchTabRight = "ctrl+right"
-	SwitchTabLeft  = "ctrl+left"
-	Quit           = "ctrl+c"
+	keymapSwitchTabRight = "ctrl+right"
+	keymapSwitchTabLeft  = "ctrl+left"
+	keymapQuit           = "ctrl+c"
 )
 
 var (
-	once sync.Once
-	k    *KeyMap
+	onceKeyMap sync.Once
+	keyMap     *KeyMap
 )
 
 func NewKeyMap() *KeyMap {
-	once.Do(func() {
-		k = &KeyMap{
+	onceKeyMap.Do(func() {
+		keyMap = &KeyMap{
 			SwitchTabRight: teakey.NewBinding(
-				teakey.WithKeys(SwitchTabRight),
+				teakey.WithKeys(keymapSwitchTabRight),
 			),
 			SwitchTabLeft: teakey.NewBinding(
-				teakey.WithKeys(SwitchTabLeft),
+				teakey.WithKeys(keymapSwitchTabLeft),
 			),
 			Quit: teakey.NewBinding(
-				teakey.WithKeys(Quit),
+				teakey.WithKeys(keymapQuit),
 			),
 		}
 	})
-	return k
+	return keyMap
 }
 
 // --------------------------------------------

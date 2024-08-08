@@ -5,9 +5,6 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/termkit/skeleton/alpha/header"
-	"github.com/termkit/skeleton/alpha/keymap"
-	"github.com/termkit/skeleton/alpha/spirit"
 	"sync"
 )
 
@@ -15,11 +12,11 @@ import (
 type Alpha struct {
 	Viewport *viewport.Model
 
-	header      *header.Header
-	modelSpirit *spirit.ModelSpirit
+	header      *Header
+	modelSpirit *Spirit
 	lockTabs    bool
 
-	KeyMap *keymap.KeyMap
+	KeyMap *KeyMap
 
 	currentTab int
 	Pages      []tea.Model
@@ -41,21 +38,21 @@ type TitleStyle struct {
 }
 
 var (
-	once sync.Once
-	s    *Alpha
+	onceSkeletonAlpha sync.Once
+	skeletonAlpha     *Alpha
 )
 
 // NewSkeletonAlpha returns a new Alpha.
-func NewSkeletonAlpha(minimumX, minimumY int) *Alpha {
-	once.Do(func() {
-		s = &Alpha{
-			Viewport:    spirit.NewTerminalViewport(minimumX, minimumY),
-			header:      header.NewHeader(),
-			modelSpirit: spirit.NewSpirit(),
-			KeyMap:      keymap.NewKeyMap(),
+func NewSkeletonAlpha() *Alpha {
+	onceSkeletonAlpha.Do(func() {
+		skeletonAlpha = &Alpha{
+			Viewport:    newTerminalViewport(),
+			header:      newHeader(),
+			modelSpirit: newSpirit(),
+			KeyMap:      NewKeyMap(),
 		}
 	})
-	return s
+	return skeletonAlpha
 }
 
 type SwitchTab struct {
@@ -64,6 +61,7 @@ type SwitchTab struct {
 
 func (a *Alpha) SetCurrentTab(tab int) {
 	a.currentTab = tab
+	a.header.SetCurrentTab(tab)
 }
 
 func (a *Alpha) Init() tea.Cmd {
