@@ -51,8 +51,8 @@ var (
 	skeletonAlpha     *Alpha
 )
 
-// NewSkeletonAlpha returns a new Alpha.
-func NewSkeletonAlpha() *Alpha {
+// SkeletonAlpha returns a new Alpha.
+func SkeletonAlpha() *Alpha {
 	onceSkeletonAlpha.Do(func() {
 		skeletonAlpha = &Alpha{
 			Viewport: newTerminalViewport(),
