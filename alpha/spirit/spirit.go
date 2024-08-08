@@ -37,9 +37,9 @@ var (
 	vp           *viewport.Model
 )
 
-func NewTerminalViewport() *viewport.Model {
+func NewTerminalViewport(minimumX, minimumY int) *viewport.Model {
 	onceViewport.Do(func() {
-		vp = &viewport.Model{}
+		vp = &viewport.Model{Width: minimumX, Height: minimumY}
 	})
 	return vp
 }
