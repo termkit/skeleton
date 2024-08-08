@@ -5,31 +5,6 @@ import (
 	"sync"
 )
 
-type Spirit struct {
-	lockTabs bool
-}
-
-var (
-	onceSpirit  sync.Once
-	modelSpirit *Spirit
-)
-
-// newSpirit returns a new Spirit.
-func newSpirit() *Spirit {
-	onceSpirit.Do(func() {
-		modelSpirit = &Spirit{}
-	})
-	return modelSpirit
-}
-
-func (s *Spirit) SetLockTabs(lock bool) {
-	s.lockTabs = lock
-}
-
-func (s *Spirit) GetLockTabs() bool {
-	return s.lockTabs
-}
-
 // --------------------------------------------
 
 var (

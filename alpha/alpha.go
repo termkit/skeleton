@@ -12,14 +12,23 @@ import (
 type Alpha struct {
 	Viewport *viewport.Model
 
-	header      *Header
-	modelSpirit *Spirit
-	lockTabs    bool
+	header   *Header
+	lockTabs bool
 
 	KeyMap *KeyMap
 
 	currentTab int
 	Pages      []tea.Model
+}
+
+var lockTabs bool
+
+func SetLockTabs(lock bool) {
+	lockTabs = lock
+}
+
+func GetLockTabs() bool {
+	return lockTabs
 }
 
 func (a *Alpha) AddPage(title Title, page tea.Model) {
@@ -46,10 +55,9 @@ var (
 func NewSkeletonAlpha() *Alpha {
 	onceSkeletonAlpha.Do(func() {
 		skeletonAlpha = &Alpha{
-			Viewport:    newTerminalViewport(),
-			header:      newHeader(),
-			modelSpirit: newSpirit(),
-			KeyMap:      NewKeyMap(),
+			Viewport: newTerminalViewport(),
+			header:   newHeader(),
+			KeyMap:   NewKeyMap(),
 		}
 	})
 	return skeletonAlpha
@@ -94,11 +102,11 @@ func (a *Alpha) Update(msg tea.Msg) (*Alpha, tea.Cmd) {
 		case key.Matches(msg, a.KeyMap.Quit):
 			return a, tea.Quit
 		case key.Matches(msg, a.KeyMap.SwitchTabLeft):
-			if !a.modelSpirit.GetLockTabs() {
+			if !GetLockTabs() {
 				a.currentTab = max(a.currentTab-1, 0)
 			}
 		case key.Matches(msg, a.KeyMap.SwitchTabRight):
-			if !a.modelSpirit.GetLockTabs() {
+			if !GetLockTabs() {
 				a.currentTab = min(a.currentTab+1, len(a.Pages)-1)
 			}
 		}

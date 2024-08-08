@@ -17,8 +17,6 @@ type Header struct {
 
 	currentTab int
 
-	modelSpirit *Spirit
-
 	commonHeaders       []commonHeader
 	currentSpecialStyle int
 }
@@ -63,13 +61,10 @@ var (
 // newHeader returns a new Header.
 func newHeader() *Header {
 	onceHeader.Do(func() {
-		s := newSpirit()
-		s.SetLockTabs(false)
 		header = &Header{
-			modelSpirit: s,
-			Viewport:    newTerminalViewport(),
-			currentTab:  0,
-			KeyMap:      NewKeyMap(),
+			Viewport:   newTerminalViewport(),
+			currentTab: 0,
+			KeyMap:     NewKeyMap(),
 		}
 	})
 	return header
@@ -77,6 +72,14 @@ func newHeader() *Header {
 
 func (h *Header) SetCurrentTab(tab int) {
 	h.currentTab = tab
+}
+
+func (h *Header) SetLockTabs(lock bool) {
+	h.SetLockTabs(lock)
+}
+
+func (h *Header) GetLockTabs() bool {
+	return h.GetLockTabs()
 }
 
 func (h *Header) GetCurrentTab() int {
@@ -106,11 +109,11 @@ func (h *Header) Update(msg tea.Msg) (*Header, tea.Cmd) {
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, h.KeyMap.SwitchTabLeft):
-			if !h.modelSpirit.GetLockTabs() {
+			if !h.GetLockTabs() {
 				h.currentTab = max(h.currentTab-1, 0)
 			}
 		case key.Matches(msg, h.KeyMap.SwitchTabRight):
-			if !h.modelSpirit.GetLockTabs() {
+			if !h.GetLockTabs() {
 				h.currentTab = min(h.currentTab+1, len(h.commonHeaders)-1)
 			}
 		}
@@ -131,7 +134,7 @@ func (h *Header) View() string {
 	var renderedTitles []string
 	renderedTitles = append(renderedTitles, "")
 	for i, title := range h.commonHeaders {
-		if h.modelSpirit.GetLockTabs() {
+		if h.GetLockTabs() {
 			if i == 0 {
 				renderedTitles = append(renderedTitles, TitleStyleActive.Render(title.header))
 			} else {
