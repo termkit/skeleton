@@ -64,7 +64,7 @@ func newHeader() *Header {
 		header = &Header{
 			Viewport:   newTerminalViewport(),
 			currentTab: 0,
-			KeyMap:     NewKeyMap(),
+			KeyMap:     newKeyMap(),
 		}
 	})
 	return header
@@ -75,11 +75,11 @@ func (h *Header) SetCurrentTab(tab int) {
 }
 
 func (h *Header) SetLockTabs(lock bool) {
-	h.SetLockTabs(lock)
+	lockTabs = lock
 }
 
 func (h *Header) GetLockTabs() bool {
-	return h.GetLockTabs()
+	return lockTabs
 }
 
 func (h *Header) GetCurrentTab() int {
@@ -93,11 +93,6 @@ func (h *Header) AddCommonHeader(header string) {
 		//inactiveStyle: inactiveStyle,
 		//activeStyle:   activeStyle,
 	})
-}
-
-type UpdateMsg struct {
-	Msg               string
-	UpdatingComponent string
 }
 
 func (h *Header) Init() tea.Cmd {

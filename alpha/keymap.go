@@ -22,7 +22,7 @@ var (
 	keyMap     *KeyMap
 )
 
-func NewKeyMap() *KeyMap {
+func newKeyMap() *KeyMap {
 	onceKeyMap.Do(func() {
 		keyMap = &KeyMap{
 			SwitchTabRight: teakey.NewBinding(

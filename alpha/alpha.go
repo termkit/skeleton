@@ -12,8 +12,7 @@ import (
 type Alpha struct {
 	Viewport *viewport.Model
 
-	header   *Header
-	lockTabs bool
+	header *Header
 
 	KeyMap *KeyMap
 
@@ -57,7 +56,7 @@ func SkeletonAlpha() *Alpha {
 		skeletonAlpha = &Alpha{
 			Viewport: newTerminalViewport(),
 			header:   newHeader(),
-			KeyMap:   NewKeyMap(),
+			KeyMap:   newKeyMap(),
 		}
 	})
 	return skeletonAlpha
