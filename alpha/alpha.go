@@ -19,7 +19,7 @@ type Alpha struct {
 	modelSpirit *spirit.ModelSpirit
 	lockTabs    bool
 
-	keys *keymap.KeyMap
+	KeyMap *keymap.KeyMap
 
 	currentTab int
 	Pages      []tea.Model
@@ -52,7 +52,7 @@ func NewSkeletonAlpha(minimumX, minimumY int) *Alpha {
 			Viewport:    spirit.NewTerminalViewport(minimumX, minimumY),
 			header:      header.NewHeader(),
 			modelSpirit: spirit.NewSpirit(),
-			keys:        keymap.NewKeyMap(),
+			KeyMap:      keymap.NewKeyMap(),
 		}
 	})
 	return s
@@ -93,13 +93,13 @@ func (a *Alpha) Update(msg tea.Msg) (*Alpha, tea.Cmd) {
 		a.Viewport.Height = msg.Height
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, a.keys.Quit):
+		case key.Matches(msg, a.KeyMap.Quit):
 			return a, tea.Quit
-		case key.Matches(msg, a.keys.SwitchTabLeft):
+		case key.Matches(msg, a.KeyMap.SwitchTabLeft):
 			if !a.modelSpirit.GetLockTabs() {
 				a.currentTab = max(a.currentTab-1, 0)
 			}
-		case key.Matches(msg, a.keys.SwitchTabRight):
+		case key.Matches(msg, a.KeyMap.SwitchTabRight):
 			if !a.modelSpirit.GetLockTabs() {
 				a.currentTab = min(a.currentTab+1, len(a.Pages)-1)
 			}

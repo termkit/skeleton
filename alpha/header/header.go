@@ -15,7 +15,7 @@ import (
 type Header struct {
 	Viewport *viewport.Model
 
-	keys *keymap.KeyMap
+	KeyMap *keymap.KeyMap
 
 	currentTab int
 
@@ -71,7 +71,7 @@ func NewHeader() *Header {
 			modelSpirit: s,
 			Viewport:    spirit.NewTerminalViewport(102, 24),
 			currentTab:  0,
-			keys:        keymap.NewKeyMap(),
+			KeyMap:      keymap.NewKeyMap(),
 		}
 	})
 	return h
@@ -107,11 +107,11 @@ func (h *Header) Update(msg tea.Msg) (*Header, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, h.keys.SwitchTabLeft):
+		case key.Matches(msg, h.KeyMap.SwitchTabLeft):
 			if !h.modelSpirit.GetLockTabs() {
 				h.currentTab = max(h.currentTab-1, 0)
 			}
-		case key.Matches(msg, h.keys.SwitchTabRight):
+		case key.Matches(msg, h.KeyMap.SwitchTabRight):
 			if !h.modelSpirit.GetLockTabs() {
 				h.currentTab = min(h.currentTab+1, len(h.commonHeaders)-1)
 			}
