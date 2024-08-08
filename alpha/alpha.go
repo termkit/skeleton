@@ -46,10 +46,10 @@ var (
 )
 
 // NewSkeletonAlpha returns a new Alpha.
-func NewSkeletonAlpha() *Alpha {
+func NewSkeletonAlpha(minimumX, minimumY int) *Alpha {
 	once.Do(func() {
 		s = &Alpha{
-			Viewport:    spirit.NewTerminalViewport(),
+			Viewport:    spirit.NewTerminalViewport(minimumX, minimumY),
 			header:      header.NewHeader(),
 			modelSpirit: spirit.NewSpirit(),
 			keys:        keymap.NewKeyMap(),

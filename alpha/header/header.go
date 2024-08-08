@@ -69,7 +69,7 @@ func NewHeader() *Header {
 		s.SetLockTabs(false)
 		h = &Header{
 			modelSpirit: s,
-			Viewport:    spirit.NewTerminalViewport(),
+			Viewport:    spirit.NewTerminalViewport(102, 24),
 			currentTab:  0,
 			keys:        keymap.NewKeyMap(),
 		}
