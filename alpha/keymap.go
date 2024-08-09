@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-type KeyMap struct {
+type keyMap struct {
 	SwitchTabRight teakey.Binding
 	SwitchTabLeft  teakey.Binding
 	Quit           teakey.Binding
@@ -19,12 +19,12 @@ const (
 
 var (
 	onceKeyMap sync.Once
-	keyMap     *KeyMap
+	varKeyMap  *keyMap
 )
 
-func newKeyMap() *KeyMap {
+func newKeyMap() *keyMap {
 	onceKeyMap.Do(func() {
-		keyMap = &KeyMap{
+		varKeyMap = &keyMap{
 			SwitchTabRight: teakey.NewBinding(
 				teakey.WithKeys(keymapSwitchTabRight),
 			),
@@ -36,31 +36,31 @@ func newKeyMap() *KeyMap {
 			),
 		}
 	})
-	return keyMap
+	return varKeyMap
 }
 
 // --------------------------------------------
 
-func (k *KeyMap) SetKeyNextTab(keybinding teakey.Binding) {
+func (k *keyMap) SetKeyNextTab(keybinding teakey.Binding) {
 	k.SwitchTabRight = keybinding
 }
 
-func (k *KeyMap) SetKeyPrevTab(keybinding teakey.Binding) {
+func (k *keyMap) SetKeyPrevTab(keybinding teakey.Binding) {
 	k.SwitchTabLeft = keybinding
 }
 
-func (k *KeyMap) SetKeyQuit(keybinding teakey.Binding) {
+func (k *keyMap) SetKeyQuit(keybinding teakey.Binding) {
 	k.Quit = keybinding
 }
 
-func (k *KeyMap) GetKeyNextTab() teakey.Binding {
+func (k *keyMap) GetKeyNextTab() teakey.Binding {
 	return k.SwitchTabRight
 }
 
-func (k *KeyMap) GetKeyPrevTab() teakey.Binding {
+func (k *keyMap) GetKeyPrevTab() teakey.Binding {
 	return k.SwitchTabLeft
 }
 
-func (k *KeyMap) GetKeyQuit() teakey.Binding {
+func (k *keyMap) GetKeyQuit() teakey.Binding {
 	return k.Quit
 }

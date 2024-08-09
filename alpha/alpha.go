@@ -10,39 +10,15 @@ import (
 
 // Alpha is a helper for rendering the Alpha of the terminal.
 type Alpha struct {
-	Viewport *viewport.Model
+	viewport *viewport.Model
+
+	lockTabs   bool
+	currentTab int
 
 	header *Header
+	KeyMap *keyMap
 
-	KeyMap *KeyMap
-
-	currentTab int
-	Pages      []tea.Model
-}
-
-var lockTabs bool
-
-func SetLockTabs(lock bool) {
-	lockTabs = lock
-}
-
-func GetLockTabs() bool {
-	return lockTabs
-}
-
-func (a *Alpha) AddPage(title Title, page tea.Model) {
-	a.header.AddCommonHeader(title.Title)
-	a.Pages = append(a.Pages, page)
-}
-
-type Title struct {
-	Title string
-	Style TitleStyle
-}
-
-type TitleStyle struct {
-	Active   lipgloss.Style
-	Inactive lipgloss.Style
+	pages []tea.Model
 }
 
 var (
@@ -54,7 +30,7 @@ var (
 func SkeletonAlpha() *Alpha {
 	onceSkeletonAlpha.Do(func() {
 		skeletonAlpha = &Alpha{
-			Viewport: newTerminalViewport(),
+			viewport: newTerminalViewport(),
 			header:   newHeader(),
 			KeyMap:   newKeyMap(),
 		}
@@ -62,26 +38,17 @@ func SkeletonAlpha() *Alpha {
 	return skeletonAlpha
 }
 
-type SwitchTab struct {
-	Tab int
-}
-
-func (a *Alpha) SetCurrentTab(tab int) {
-	a.currentTab = tab
-	a.header.SetCurrentTab(tab)
-}
-
 func (a *Alpha) Init() tea.Cmd {
 	self := func() tea.Msg {
-		return SwitchTab{}
+		return nil
 	}
 
-	inits := make([]tea.Cmd, len(a.Pages)+1) // +1 for self
-	for i := range a.Pages {
-		inits[i] = a.Pages[i].Init()
+	inits := make([]tea.Cmd, len(a.pages)+1) // +1 for self
+	for i := range a.pages {
+		inits[i] = a.pages[i].Init()
 	}
 
-	inits[len(a.Pages)] = self
+	inits[len(a.pages)] = self
 
 	return tea.Batch(inits...)
 }
@@ -94,19 +61,19 @@ func (a *Alpha) Update(msg tea.Msg) (*Alpha, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		a.Viewport.Width = msg.Width
-		a.Viewport.Height = msg.Height
+		a.viewport.Width = msg.Width
+		a.viewport.Height = msg.Height
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, a.KeyMap.Quit):
 			return a, tea.Quit
 		case key.Matches(msg, a.KeyMap.SwitchTabLeft):
-			if !GetLockTabs() {
+			if !a.GetLockTabs() {
 				a.currentTab = max(a.currentTab-1, 0)
 			}
 		case key.Matches(msg, a.KeyMap.SwitchTabRight):
-			if !GetLockTabs() {
-				a.currentTab = min(a.currentTab+1, len(a.Pages)-1)
+			if !a.GetLockTabs() {
+				a.currentTab = min(a.currentTab+1, len(a.pages)-1)
 			}
 		}
 	}
@@ -114,7 +81,7 @@ func (a *Alpha) Update(msg tea.Msg) (*Alpha, tea.Cmd) {
 	a.header, cmd = a.header.Update(msg)
 	cmds = append(cmds, cmd)
 
-	a.Pages[a.currentTab], cmd = a.Pages[a.currentTab].Update(msg)
+	a.pages[a.currentTab], cmd = a.pages[a.currentTab].Update(msg)
 	cmds = append(cmds, cmd)
 
 	return a, tea.Batch(cmds...)
@@ -126,7 +93,26 @@ func (a *Alpha) View() string {
 		Align(lipgloss.Center).
 		Border(lipgloss.RoundedBorder()).
 		BorderTop(false).
-		Width(a.Viewport.Width - 2)
+		Width(a.viewport.Width - 2)
 
-	return lipgloss.JoinVertical(lipgloss.Top, a.header.View(), base.Render(a.Pages[a.currentTab].View()))
+	return lipgloss.JoinVertical(lipgloss.Top, a.header.View(), base.Render(a.pages[a.currentTab].View()))
+}
+
+func (a *Alpha) SetLockTabs(lock bool) {
+	a.header.SetLockTabs(lock)
+	a.lockTabs = lock
+}
+
+func (a *Alpha) GetLockTabs() bool {
+	return a.lockTabs
+}
+
+func (a *Alpha) AddPage(pageName string, page tea.Model) {
+	a.header.AddCommonHeader(pageName)
+	a.pages = append(a.pages, page)
+}
+
+func (a *Alpha) SetCurrentTab(tab int) {
+	a.currentTab = tab
+	a.header.SetCurrentTab(tab)
 }

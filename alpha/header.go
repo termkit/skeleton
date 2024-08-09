@@ -11,11 +11,12 @@ import (
 
 // Header is a helper for rendering the Header of the terminal.
 type Header struct {
-	Viewport *viewport.Model
+	viewport *viewport.Model
 
-	KeyMap *KeyMap
-
+	lockTabs   bool
 	currentTab int
+
+	keyMap *keyMap
 
 	commonHeaders       []commonHeader
 	currentSpecialStyle int
@@ -47,9 +48,6 @@ var (
 type commonHeader struct {
 	header    string
 	rawHeader string
-
-	inactiveStyle lipgloss.Style
-	activeStyle   lipgloss.Style
 }
 
 // Define sync.Once and newHeader should return same instance
@@ -62,37 +60,12 @@ var (
 func newHeader() *Header {
 	onceHeader.Do(func() {
 		header = &Header{
-			Viewport:   newTerminalViewport(),
+			viewport:   newTerminalViewport(),
 			currentTab: 0,
-			KeyMap:     newKeyMap(),
+			keyMap:     newKeyMap(),
 		}
 	})
 	return header
-}
-
-func (h *Header) SetCurrentTab(tab int) {
-	h.currentTab = tab
-}
-
-func (h *Header) SetLockTabs(lock bool) {
-	lockTabs = lock
-}
-
-func (h *Header) GetLockTabs() bool {
-	return lockTabs
-}
-
-func (h *Header) GetCurrentTab() int {
-	return h.currentTab
-}
-
-func (h *Header) AddCommonHeader(header string) {
-	h.commonHeaders = append(h.commonHeaders, commonHeader{
-		header:    header,
-		rawHeader: header,
-		//inactiveStyle: inactiveStyle,
-		//activeStyle:   activeStyle,
-	})
 }
 
 func (h *Header) Init() tea.Cmd {
@@ -103,11 +76,11 @@ func (h *Header) Update(msg tea.Msg) (*Header, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch {
-		case key.Matches(msg, h.KeyMap.SwitchTabLeft):
+		case key.Matches(msg, h.keyMap.SwitchTabLeft):
 			if !h.GetLockTabs() {
 				h.currentTab = max(h.currentTab-1, 0)
 			}
-		case key.Matches(msg, h.KeyMap.SwitchTabRight):
+		case key.Matches(msg, h.keyMap.SwitchTabRight):
 			if !h.GetLockTabs() {
 				h.currentTab = min(h.currentTab+1, len(h.commonHeaders)-1)
 			}
@@ -149,8 +122,31 @@ func (h *Header) View() string {
 	leftCorner = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(leftCorner)
 	rightCorner = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(rightCorner)
 
-	line := strings.Repeat("─", h.Viewport.Width-(titleLen+2))
+	line := strings.Repeat("─", h.viewport.Width-(titleLen+2))
 	line = lipgloss.NewStyle().Foreground(lipgloss.Color("39")).Render(line)
 
 	return lipgloss.JoinHorizontal(lipgloss.Bottom, leftCorner, lipgloss.JoinHorizontal(lipgloss.Center, append(renderedTitles, line)...), rightCorner)
+}
+
+func (h *Header) SetCurrentTab(tab int) {
+	h.currentTab = tab
+}
+
+func (h *Header) SetLockTabs(lock bool) {
+	h.lockTabs = lock
+}
+
+func (h *Header) GetLockTabs() bool {
+	return h.lockTabs
+}
+
+func (h *Header) GetCurrentTab() int {
+	return h.currentTab
+}
+
+func (h *Header) AddCommonHeader(header string) {
+	h.commonHeaders = append(h.commonHeaders, commonHeader{
+		header:    header,
+		rawHeader: header,
+	})
 }
