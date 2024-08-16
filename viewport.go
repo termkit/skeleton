@@ -1,4 +1,4 @@
-package alpha
+package skeleton
 
 import (
 	"github.com/charmbracelet/bubbles/viewport"
@@ -21,22 +21,22 @@ func newTerminalViewport() *viewport.Model {
 
 // --------------------------------------------
 
-func GetTerminalViewport() *viewport.Model {
+func (s *Skeleton) GetTerminalViewport() *viewport.Model {
 	return vp
 }
 
-func SetTerminalViewportWidth(width int) {
+func (s *Skeleton) SetTerminalViewportWidth(width int) {
 	vp.Width = width
 }
 
-func SetTerminalViewportHeight(height int) {
+func (s *Skeleton) SetTerminalViewportHeight(height int) {
 	vp.Height = height
 }
 
-func GetTerminalViewportWidth() int {
+func (s *Skeleton) GetTerminalViewportWidth() int {
 	return vp.Width
 }
 
-func GetTerminalViewportHeight() int {
+func (s *Skeleton) GetTerminalViewportHeight() int {
 	return vp.Height
 }

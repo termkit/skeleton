@@ -1,4 +1,4 @@
-package alpha
+package skeleton
 
 import (
 	teakey "github.com/charmbracelet/bubbles/key"
