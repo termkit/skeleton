@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"strings"
 )
 
 // Skeleton is a helper for rendering the Skeleton of the terminal.
@@ -15,6 +16,7 @@ type Skeleton struct {
 	currentTab int
 
 	header *header
+	widget *widget
 	KeyMap *keyMap
 
 	pages []tea.Model
@@ -39,6 +41,7 @@ func NewSkeleton() *Skeleton {
 		properties: defaultSkeletonProperties(),
 		viewport:   newTerminalViewport(),
 		header:     newHeader(),
+		widget:     newWidget(),
 		KeyMap:     newKeyMap(),
 	}
 }
@@ -46,6 +49,7 @@ func NewSkeleton() *Skeleton {
 // SetBorderColor sets the border color of the Skeleton.
 func (s *Skeleton) SetBorderColor(color string) *Skeleton {
 	s.header.SetBorderColor(color)
+	s.widget.SetBorderColor(color)
 	s.properties.borderColor = color
 	return s
 }
@@ -74,6 +78,12 @@ func (s *Skeleton) SetActiveTabBorderColor(color string) *Skeleton {
 	return s
 }
 
+// SetWidgetBorderColor sets the border color of the Widget.
+func (s *Skeleton) SetWidgetBorderColor(color string) *Skeleton {
+	s.widget.SetWidgetBorderColor(color)
+	return s
+}
+
 // SetTabLeftPadding sets the left padding of the Skeleton.
 func (s *Skeleton) SetTabLeftPadding(padding int) *Skeleton {
 	s.header.SetLeftPadding(padding)
@@ -83,6 +93,18 @@ func (s *Skeleton) SetTabLeftPadding(padding int) *Skeleton {
 // SetTabRightPadding sets the right padding of the Skeleton.
 func (s *Skeleton) SetTabRightPadding(padding int) *Skeleton {
 	s.header.SetRightPadding(padding)
+	return s
+}
+
+// SetWidgetLeftPadding sets the left padding of the Skeleton.
+func (s *Skeleton) SetWidgetLeftPadding(padding int) *Skeleton {
+	s.widget.SetLeftPadding(padding)
+	return s
+}
+
+// SetWidgetRightPadding sets the right padding of the Skeleton.
+func (s *Skeleton) SetWidgetRightPadding(padding int) *Skeleton {
+	s.widget.SetRightPadding(padding)
 	return s
 }
 
@@ -102,6 +124,11 @@ func (s *Skeleton) AddPage(pageName string, page tea.Model) *Skeleton {
 	return s
 }
 
+func (s *Skeleton) AddWidget(widget string) *Skeleton {
+	s.widget.AddWidget(widget)
+	return s
+}
+
 func (s *Skeleton) SetCurrentTab(tab int) *Skeleton {
 	s.currentTab = tab
 	s.header.SetCurrentTab(tab)
@@ -109,6 +136,10 @@ func (s *Skeleton) SetCurrentTab(tab int) *Skeleton {
 }
 
 func (s *Skeleton) Init() tea.Cmd {
+	if len(s.pages) == 0 {
+		panic("skeleton: no pages added, please add at least one page")
+	}
+
 	self := func() tea.Msg {
 		return nil
 	}
@@ -162,8 +193,18 @@ func (s *Skeleton) View() string {
 		BorderForeground(lipgloss.Color(s.properties.borderColor)).
 		Align(lipgloss.Center).
 		Border(lipgloss.RoundedBorder()).
-		BorderTop(false).
+		BorderTop(false).BorderBottom(false).
 		Width(s.viewport.Width - 2)
 
-	return lipgloss.JoinVertical(lipgloss.Top, s.header.View(), base.Render(s.pages[s.currentTab].View()))
+	body := s.pages[s.currentTab].View()
+
+	bodyHeight := s.viewport.Height - 5 // 6 is the header height and widget height
+	if len(s.widget.widgets) > 0 {
+		bodyHeight -= 1
+	}
+	if lipgloss.Height(body) < bodyHeight {
+		body += strings.Repeat("\n", bodyHeight-lipgloss.Height(body))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, s.header.View(), base.Render(body), s.widget.View())
 }

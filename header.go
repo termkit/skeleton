@@ -17,8 +17,7 @@ type header struct {
 
 	keyMap *keyMap
 
-	headers             []commonHeader
-	currentSpecialStyle int
+	headers []commonHeader
 
 	// properties are hold the properties of the header
 	properties *headerProperties
