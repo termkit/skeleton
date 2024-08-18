@@ -10,6 +10,8 @@ import (
 
 // Skeleton is a helper for rendering the Skeleton of the terminal.
 type Skeleton struct {
+	termReady bool
+
 	viewport *viewport.Model
 
 	lockTabs   bool
@@ -124,8 +126,21 @@ func (s *Skeleton) AddPage(pageName string, page tea.Model) *Skeleton {
 	return s
 }
 
-func (s *Skeleton) AddWidget(widget string) *Skeleton {
-	s.widget.AddWidget(widget)
+// AddWidget adds a new widget to the Skeleton.
+func (s *Skeleton) AddWidget(key string, value string) *Skeleton {
+	s.widget.AddWidget(key, value)
+	return s
+}
+
+// UpdateWidgetValue updates the Value content by the given key.
+func (s *Skeleton) UpdateWidgetValue(key string, value string) *Skeleton {
+	s.widget.UpdateWidgetValue(key, value)
+	return s
+}
+
+// DeleteWidget deletes the Value by the given key.
+func (s *Skeleton) DeleteWidget(key string) *Skeleton {
+	s.widget.DeleteWidget(key)
 	return s
 }
 
@@ -144,12 +159,15 @@ func (s *Skeleton) Init() tea.Cmd {
 		return nil
 	}
 
-	inits := make([]tea.Cmd, len(s.pages)+1) // +1 for self
+	inits := make([]tea.Cmd, len(s.pages)+3) // +3 ( for self, header, Value)
 	for i := range s.pages {
 		inits[i] = s.pages[i].Init()
 	}
 
+	// and init self, header and Value
 	inits[len(s.pages)] = self
+	inits[len(s.pages)+1] = s.header.Init()
+	inits[len(s.pages)+2] = s.widget.Init()
 
 	return tea.Batch(inits...)
 }
@@ -162,6 +180,11 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		if !s.termReady {
+			if msg.Width > 0 && msg.Height > 0 {
+				s.termReady = true
+			}
+		}
 		s.viewport.Width = msg.Width
 		s.viewport.Height = msg.Height
 	case tea.KeyMsg:
@@ -182,6 +205,9 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 	s.header, cmd = s.header.Update(msg)
 	cmds = append(cmds, cmd)
 
+	s.widget, cmd = s.widget.Update(msg)
+	cmds = append(cmds, cmd)
+
 	s.pages[s.currentTab], cmd = s.pages[s.currentTab].Update(msg)
 	cmds = append(cmds, cmd)
 
@@ -189,6 +215,10 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 }
 
 func (s *Skeleton) View() string {
+	if !s.termReady {
+		return "setting up terminal..."
+	}
+
 	base := lipgloss.NewStyle().
 		BorderForeground(lipgloss.Color(s.properties.borderColor)).
 		Align(lipgloss.Center).
@@ -198,7 +228,7 @@ func (s *Skeleton) View() string {
 
 	body := s.pages[s.currentTab].View()
 
-	bodyHeight := s.viewport.Height - 5 // 6 is the header height and widget height
+	bodyHeight := s.viewport.Height - 5 // 6 is the header height and Value height
 	if len(s.widget.widgets) > 0 {
 		bodyHeight -= 1
 	}

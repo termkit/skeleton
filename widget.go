@@ -9,16 +9,23 @@ import (
 
 // widget is a helper for rendering the widget of the terminal.
 type widget struct {
+	termReady bool
+
 	viewport *viewport.Model
 
-	widgets []commonWidget
+	// widgets are hold the widgets
+	widgets []*commonWidget
 
 	// properties are hold the properties of the widget
 	properties *widgetProperties
+
+	// updateChan is hold the update channel
+	updateChan chan any
 }
 
 type commonWidget struct {
-	widget string
+	Key   string // Key is the name of the Value
+	Value string // Value is the content of the Value
 }
 
 type widgetProperties struct {
@@ -52,6 +59,7 @@ func newWidget() *widget {
 	return &widget{
 		properties: defaultWidgetProperties(),
 		viewport:   newTerminalViewport(),
+		updateChan: make(chan any),
 	}
 }
 
@@ -81,30 +89,146 @@ func (w *widget) SetRightPadding(padding int) *widget {
 	return w
 }
 
-func (w *widget) AddWidget(widget string) *widget {
-	w.widgets = append(w.widgets, commonWidget{widget: widget})
-	return w
+func (w *widget) AddWidget(key string, value string) {
+	go func() {
+		w.updateChan <- AddNewWidget{
+			Key:   key,
+			Value: value,
+		}
+	}()
 }
 
-func (w *widget) Init() tea.Cmd {
+// GetWidgetByName returns the Value by the given key.
+func (w *widget) GetWidgetByName(name string) *commonWidget {
+	for _, widget := range w.widgets {
+		if widget.Key == name {
+			return widget
+		}
+	}
+
 	return nil
 }
 
+// UpdateWidgetValue updates the Value content by the given key.
+func (w *widget) UpdateWidgetValue(key string, value string) {
+	go func() {
+		w.updateChan <- UpdateWidgetContent{
+			Key:   key,
+			Value: value,
+		}
+	}()
+}
+
+// DeleteWidget deletes the Value by the given key.
+func (w *widget) DeleteWidget(key string) {
+	go func() {
+		w.updateChan <- DeleteWidget{
+			Key: key,
+		}
+	}()
+}
+
+type AddNewWidget struct {
+	Key   string
+	Value string
+}
+
+type UpdateWidgetContent struct {
+	Key   string
+	Value string
+}
+
+type DeleteWidget struct {
+	Key string
+}
+
+func (w *widget) Listen() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case o := <-w.updateChan:
+			return o
+		default:
+			return <-w.updateChan
+		}
+	}
+}
+
+func (w *widget) addNewWidget(key, value string) {
+	// skip if name already exists
+	if w.GetWidgetByName(key) != nil {
+		return
+	}
+
+	w.widgets = append(w.widgets, &commonWidget{
+		Key:   key,
+		Value: value,
+	})
+}
+
+func (w *widget) updateWidgetContent(key, value string) {
+	x := w.GetWidgetByName(key)
+	if x != nil {
+		x.Value = value
+	}
+}
+
+func (w *widget) deleteWidget(key string) {
+	for i, widget := range w.widgets {
+		if widget.Key == key {
+			w.widgets = append(w.widgets[:i], w.widgets[i+1:]...)
+			break
+		}
+	}
+}
+
+func (w *widget) Init() tea.Cmd {
+	return tea.Batch(w.Listen())
+}
+
 func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
-	return w, nil
+	var cmds []tea.Cmd
+	//var cmd tea.Cmd
+
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		if !w.termReady {
+			if msg.Width > 0 && msg.Height > 0 {
+				w.termReady = true
+			}
+		}
+		w.viewport.Width = msg.Width
+		w.viewport.Height = msg.Height
+
+	case AddNewWidget:
+		w.addNewWidget(msg.Key, msg.Value)
+
+	case UpdateWidgetContent:
+		w.updateWidgetContent(msg.Key, msg.Value)
+
+	case DeleteWidget:
+		w.deleteWidget(msg.Key)
+	}
+
+	cmds = append(cmds, w.Listen())
+
+	return w, tea.Batch(cmds...)
 }
 
 func (w *widget) View() string {
+	if !w.termReady {
+		return "setting up terminal..."
+	}
+
 	var widgetLen int
 	for _, widget := range w.widgets {
-		widgetLen += len(widget.widget)
+		widgetLen += len(widget.Value)
 		widgetLen += w.properties.leftTabPadding + w.properties.rightTabPadding
 		widgetLen += 2 // for the border between widgets
 	}
 
 	var renderedWidgets []string
 	for _, wgt := range w.widgets {
-		renderedWidgets = append(renderedWidgets, w.properties.widgetStyle.Render(wgt.widget))
+		renderedWidgets = append(renderedWidgets, w.properties.widgetStyle.Render(wgt.Value))
 	}
 
 	leftCorner := lipgloss.JoinVertical(lipgloss.Top, "│", "╰")

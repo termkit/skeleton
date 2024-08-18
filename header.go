@@ -10,7 +10,8 @@ import (
 
 // header is a helper for rendering the header of the terminal.
 type header struct {
-	viewport *viewport.Model
+	termReady bool
+	viewport  *viewport.Model
 
 	lockTabs   bool
 	currentTab int
@@ -87,6 +88,15 @@ func (h *header) Init() tea.Cmd {
 
 func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		if !h.termReady {
+			if msg.Width > 0 && msg.Height > 0 {
+				h.termReady = true
+			}
+		}
+		h.viewport.Width = msg.Width
+		h.viewport.Height = msg.Height
+
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, h.keyMap.SwitchTabLeft):
@@ -105,6 +115,10 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 
 // View renders the header.
 func (h *header) View() string {
+	if !h.termReady {
+		return "setting up terminal..."
+	}
+
 	var titleLen int
 	for _, title := range h.headers {
 		titleLen += len(title.header)
