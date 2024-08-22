@@ -69,7 +69,8 @@ func defaultHeaderProperties() *headerProperties {
 }
 
 type commonHeader struct {
-	header string
+	key   string
+	title string
 }
 
 // newHeader returns a new header.
@@ -120,26 +121,26 @@ func (h *header) View() string {
 	}
 
 	var titleLen int
-	for _, title := range h.headers {
-		titleLen += len(title.header)
+	for _, hdr := range h.headers {
+		titleLen += len(hdr.title)
 		titleLen += h.properties.leftTabPadding + h.properties.rightTabPadding
 		titleLen += 2 // for the border between titles
 	}
 
 	var renderedTitles []string
 	renderedTitles = append(renderedTitles, "")
-	for i, title := range h.headers {
+	for i, hdr := range h.headers {
 		if h.GetLockTabs() {
 			if i == 0 {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(title.header))
+				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(hdr.title))
 			} else {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleDisabled.Render(title.header))
+				renderedTitles = append(renderedTitles, h.properties.titleStyleDisabled.Render(hdr.title))
 			}
 		} else {
 			if i == h.currentTab {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(title.header))
+				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(hdr.title))
 			} else {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleInactive.Render(title.header))
+				renderedTitles = append(renderedTitles, h.properties.titleStyleInactive.Render(hdr.title))
 			}
 		}
 	}
@@ -212,8 +213,25 @@ func (h *header) GetCurrentTab() int {
 	return h.currentTab
 }
 
-func (h *header) AddCommonHeader(header string) {
+func (h *header) AddCommonHeader(key string, title string) {
 	h.headers = append(h.headers, commonHeader{
-		header: header,
+		key:   key,
+		title: title,
 	})
+}
+
+func (h *header) UpdateCommonHeader(key string, title string) {
+	for i, header := range h.headers {
+		if header.key == key {
+			h.headers[i].title = title
+		}
+	}
+}
+
+func (h *header) DeleteCommonHeader(key string) {
+	for i, header := range h.headers {
+		if header.key == key {
+			h.headers = append(h.headers[:i], h.headers[i+1:]...)
+		}
+	}
 }

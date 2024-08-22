@@ -25,6 +25,9 @@ type Skeleton struct {
 
 	// properties are hold the properties of the Skeleton
 	properties *skeletonProperties
+
+	// updateChan is hold the update channel
+	updateChan chan any
 }
 
 type skeletonProperties struct {
@@ -45,6 +48,18 @@ func NewSkeleton() *Skeleton {
 		header:     newHeader(),
 		widget:     newWidget(),
 		KeyMap:     newKeyMap(),
+		updateChan: make(chan any),
+	}
+}
+
+func (s *Skeleton) Listen() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case o := <-s.updateChan:
+			return o
+		default:
+			return <-s.updateChan
+		}
 	}
 }
 
@@ -120,10 +135,84 @@ func (s *Skeleton) GetLockTabs() bool {
 	return s.lockTabs
 }
 
-func (s *Skeleton) AddPage(pageName string, page tea.Model) *Skeleton {
-	s.header.AddCommonHeader(pageName)
+func (s *Skeleton) AddPage(key string, title string, page tea.Model) *Skeleton {
+	s.header.AddCommonHeader(key, title)
 	s.pages = append(s.pages, page)
+	go func() {
+		s.updateChan <- AddPage{
+			Key:   key,
+			Title: title,
+			Page:  page,
+		}
+	}()
 	return s
+}
+
+type AddPage struct {
+	Key   string
+	Title string
+	Page  tea.Model
+}
+
+// UpdatePageTitle updates the title of the page by the given key.
+func (s *Skeleton) UpdatePageTitle(key string, title string) *Skeleton {
+	go func() {
+		s.updateChan <- UpdatePageTitle{
+			Key:   key,
+			Title: title,
+		}
+	}()
+	return s
+}
+
+func (s *Skeleton) updatePageTitle(key string, title string) {
+	s.header.UpdateCommonHeader(key, title)
+}
+
+type UpdatePageTitle struct {
+	Key   string
+	Title string
+}
+
+// DeletePage deletes the page by the given key.
+func (s *Skeleton) DeletePage(key string, switchCurrentPageAfterDelete string) *Skeleton {
+	go func() {
+		s.updateChan <- DeletePage{
+			Key:                          key,
+			SwitchCurrentPageAfterDelete: switchCurrentPageAfterDelete,
+		}
+	}()
+
+	return s
+}
+
+func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
+	var pages []tea.Model
+	for i := range s.pages {
+		if s.header.headers[i].key != key {
+			pages = append(pages, s.pages[i])
+		}
+	}
+	s.header.DeleteCommonHeader(key)
+	s.pages = pages
+
+	// if switchCurrentPageAfterDelete is not empty, switch to the page by the given key
+	if switchCurrentPageAfterDelete != "" {
+		for i := range s.pages {
+			if s.header.headers[i].key == switchCurrentPageAfterDelete {
+				s.currentTab = i
+				s.header.SetCurrentTab(i)
+				break
+			}
+		}
+	}
+
+	// should kill and close channel of the page
+}
+
+type DeletePage struct {
+	Key                          string
+	SwitchCurrentPageAfterDelete string
 }
 
 // AddWidget adds a new widget to the Skeleton.
@@ -155,19 +244,12 @@ func (s *Skeleton) Init() tea.Cmd {
 		panic("skeleton: no pages added, please add at least one page")
 	}
 
-	self := func() tea.Msg {
-		return nil
-	}
-
-	inits := make([]tea.Cmd, len(s.pages)+3) // +3 ( for self, header, Value)
-	for i := range s.pages {
-		inits[i] = s.pages[i].Init()
-	}
+	inits := make([]tea.Cmd, 3) // 3 for (self, header, Value)
 
 	// and init self, header and Value
-	inits[len(s.pages)] = self
-	inits[len(s.pages)+1] = s.header.Init()
-	inits[len(s.pages)+2] = s.widget.Init()
+	inits[0] = s.Listen()
+	inits[1] = s.header.Init()
+	inits[2] = s.widget.Init()
 
 	return tea.Batch(inits...)
 }
@@ -200,6 +282,12 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 				s.currentTab = min(s.currentTab+1, len(s.pages)-1)
 			}
 		}
+	case AddPage:
+		cmds = append(cmds, msg.Page.Init()) // init the page
+	case UpdatePageTitle:
+		s.updatePageTitle(msg.Key, msg.Title)
+	case DeletePage:
+		s.deletePage(msg.Key, msg.SwitchCurrentPageAfterDelete)
 	}
 
 	s.header, cmd = s.header.Update(msg)
@@ -210,6 +298,8 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 
 	s.pages[s.currentTab], cmd = s.pages[s.currentTab].Update(msg)
 	cmds = append(cmds, cmd)
+
+	cmds = append(cmds, s.Listen()) // listen to the update channel
 
 	return s, tea.Batch(cmds...)
 }
