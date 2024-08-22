@@ -23,6 +23,15 @@ type widget struct {
 	updateChan chan any
 }
 
+// newWidget returns a new Widget.
+func newWidget() *widget {
+	return &widget{
+		properties: defaultWidgetProperties(),
+		viewport:   newTerminalViewport(),
+		updateChan: make(chan any),
+	}
+}
+
 type commonWidget struct {
 	Key   string // Key is the name of the Value
 	Value string // Value is the content of the Value
@@ -51,15 +60,6 @@ func defaultWidgetProperties() *widgetProperties {
 				PaddingLeft(leftPadding).PaddingRight(rightPadding).
 				BorderForeground(lipgloss.Color("49"))
 		}(),
-	}
-}
-
-// newWidget returns a new Widget.
-func newWidget() *widget {
-	return &widget{
-		properties: defaultWidgetProperties(),
-		viewport:   newTerminalViewport(),
-		updateChan: make(chan any),
 	}
 }
 
@@ -98,10 +98,10 @@ func (w *widget) AddWidget(key string, value string) {
 	}()
 }
 
-// GetWidgetByName returns the Value by the given key.
-func (w *widget) GetWidgetByName(name string) *commonWidget {
+// GetWidget returns the Value by the given key.
+func (w *widget) GetWidget(key string) *commonWidget {
 	for _, widget := range w.widgets {
-		if widget.Key == name {
+		if widget.Key == key {
 			return widget
 		}
 	}
@@ -154,8 +154,8 @@ func (w *widget) Listen() tea.Cmd {
 }
 
 func (w *widget) addNewWidget(key, value string) {
-	// skip if name already exists
-	if w.GetWidgetByName(key) != nil {
+	// skip if key already exists
+	if w.GetWidget(key) != nil {
 		return
 	}
 
@@ -166,7 +166,7 @@ func (w *widget) addNewWidget(key, value string) {
 }
 
 func (w *widget) updateWidgetContent(key, value string) {
-	x := w.GetWidgetByName(key)
+	x := w.GetWidget(key)
 	if x != nil {
 		x.Value = value
 	}
@@ -187,7 +187,6 @@ func (w *widget) Init() tea.Cmd {
 
 func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 	var cmds []tea.Cmd
-	//var cmd tea.Cmd
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:

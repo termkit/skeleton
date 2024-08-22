@@ -30,16 +30,6 @@ type Skeleton struct {
 	updateChan chan any
 }
 
-type skeletonProperties struct {
-	borderColor string
-}
-
-func defaultSkeletonProperties() *skeletonProperties {
-	return &skeletonProperties{
-		borderColor: "39",
-	}
-}
-
 // NewSkeleton returns a new Skeleton.
 func NewSkeleton() *Skeleton {
 	return &Skeleton{
@@ -49,6 +39,16 @@ func NewSkeleton() *Skeleton {
 		widget:     newWidget(),
 		KeyMap:     newKeyMap(),
 		updateChan: make(chan any),
+	}
+}
+
+type skeletonProperties struct {
+	borderColor string
+}
+
+func defaultSkeletonProperties() *skeletonProperties {
+	return &skeletonProperties{
+		borderColor: "39",
 	}
 }
 
@@ -135,6 +135,12 @@ func (s *Skeleton) GetLockTabs() bool {
 	return s.lockTabs
 }
 
+type AddPage struct {
+	Key   string
+	Title string
+	Page  tea.Model
+}
+
 func (s *Skeleton) AddPage(key string, title string, page tea.Model) *Skeleton {
 	s.header.AddCommonHeader(key, title)
 	s.pages = append(s.pages, page)
@@ -148,10 +154,9 @@ func (s *Skeleton) AddPage(key string, title string, page tea.Model) *Skeleton {
 	return s
 }
 
-type AddPage struct {
+type UpdatePageTitle struct {
 	Key   string
 	Title string
-	Page  tea.Model
 }
 
 // UpdatePageTitle updates the title of the page by the given key.
@@ -169,9 +174,9 @@ func (s *Skeleton) updatePageTitle(key string, title string) {
 	s.header.UpdateCommonHeader(key, title)
 }
 
-type UpdatePageTitle struct {
-	Key   string
-	Title string
+type DeletePage struct {
+	Key                          string
+	SwitchCurrentPageAfterDelete string
 }
 
 // DeletePage deletes the page by the given key.
@@ -208,11 +213,6 @@ func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
 	}
 
 	// should kill and close channel of the page
-}
-
-type DeletePage struct {
-	Key                          string
-	SwitchCurrentPageAfterDelete string
 }
 
 // AddWidget adds a new widget to the Skeleton.

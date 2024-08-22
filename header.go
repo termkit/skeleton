@@ -24,6 +24,16 @@ type header struct {
 	properties *headerProperties
 }
 
+// newHeader returns a new header.
+func newHeader() *header {
+	return &header{
+		properties: defaultHeaderProperties(),
+		viewport:   newTerminalViewport(),
+		currentTab: 0,
+		keyMap:     newKeyMap(),
+	}
+}
+
 type headerProperties struct {
 	borderColor        string
 	leftTabPadding     int
@@ -71,16 +81,6 @@ func defaultHeaderProperties() *headerProperties {
 type commonHeader struct {
 	key   string
 	title string
-}
-
-// newHeader returns a new header.
-func newHeader() *header {
-	return &header{
-		properties: defaultHeaderProperties(),
-		viewport:   newTerminalViewport(),
-		currentTab: 0,
-		keyMap:     newKeyMap(),
-	}
 }
 
 func (h *header) Init() tea.Cmd {
