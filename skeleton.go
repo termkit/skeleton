@@ -221,6 +221,11 @@ func (s *Skeleton) DeletePage(key string, switchCurrentPageAfterDelete string) *
 }
 
 func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
+	if len(s.pages) == 1 {
+		// skeleton should have at least one page
+		return
+	}
+
 	var pages []tea.Model
 	for i := range s.pages {
 		if s.header.headers[i].key != key {
