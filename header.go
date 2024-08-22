@@ -130,15 +130,11 @@ func (h *header) View() string {
 	var renderedTitles []string
 	renderedTitles = append(renderedTitles, "")
 	for i, hdr := range h.headers {
-		if h.GetLockTabs() {
-			if i == 0 {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(hdr.title))
-			} else {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleDisabled.Render(hdr.title))
-			}
+		if i == h.currentTab {
+			renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(hdr.title))
 		} else {
-			if i == h.currentTab {
-				renderedTitles = append(renderedTitles, h.properties.titleStyleActive.Render(hdr.title))
+			if h.GetLockTabs() {
+				renderedTitles = append(renderedTitles, h.properties.titleStyleDisabled.Render(hdr.title))
 			} else {
 				renderedTitles = append(renderedTitles, h.properties.titleStyleInactive.Render(hdr.title))
 			}

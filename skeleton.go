@@ -63,75 +63,104 @@ func (s *Skeleton) Listen() tea.Cmd {
 	}
 }
 
+// DummyMsg is a dummy message to trigger the update.
+// It used in fast operations that doesn't need to send a message.
+type DummyMsg struct{} // To trigger the update
+
+// triggerUpdate triggers the update of the Skeleton.
+func (s *Skeleton) triggerUpdate() {
+	go func() {
+		s.updateChan <- DummyMsg{}
+	}()
+}
+
 // SetBorderColor sets the border color of the Skeleton.
 func (s *Skeleton) SetBorderColor(color string) *Skeleton {
 	s.header.SetBorderColor(color)
 	s.widget.SetBorderColor(color)
 	s.properties.borderColor = color
+	s.triggerUpdate()
 	return s
 }
 
 // SetInactiveTabTextColor sets the idle tab color of the Skeleton.
 func (s *Skeleton) SetInactiveTabTextColor(color string) *Skeleton {
 	s.header.SetInactiveTabTextColor(color)
+	s.triggerUpdate()
 	return s
 }
 
 // SetInactiveTabBorderColor sets the idle tab border color of the Skeleton.
 func (s *Skeleton) SetInactiveTabBorderColor(color string) *Skeleton {
 	s.header.SetInactiveTabBorderColor(color)
+	s.triggerUpdate()
 	return s
 }
 
 // SetActiveTabTextColor sets the active tab color of the Skeleton.
 func (s *Skeleton) SetActiveTabTextColor(color string) *Skeleton {
 	s.header.SetActiveTabTextColor(color)
+	s.triggerUpdate()
 	return s
 }
 
 // SetActiveTabBorderColor sets the active tab border color of the Skeleton.
 func (s *Skeleton) SetActiveTabBorderColor(color string) *Skeleton {
 	s.header.SetActiveTabBorderColor(color)
+	s.triggerUpdate()
 	return s
 }
 
 // SetWidgetBorderColor sets the border color of the Widget.
 func (s *Skeleton) SetWidgetBorderColor(color string) *Skeleton {
 	s.widget.SetWidgetBorderColor(color)
+	s.triggerUpdate()
 	return s
 }
 
 // SetTabLeftPadding sets the left padding of the Skeleton.
 func (s *Skeleton) SetTabLeftPadding(padding int) *Skeleton {
 	s.header.SetLeftPadding(padding)
+	s.triggerUpdate()
 	return s
 }
 
 // SetTabRightPadding sets the right padding of the Skeleton.
 func (s *Skeleton) SetTabRightPadding(padding int) *Skeleton {
 	s.header.SetRightPadding(padding)
+	s.triggerUpdate()
 	return s
 }
 
 // SetWidgetLeftPadding sets the left padding of the Skeleton.
 func (s *Skeleton) SetWidgetLeftPadding(padding int) *Skeleton {
 	s.widget.SetLeftPadding(padding)
+	s.triggerUpdate()
 	return s
 }
 
 // SetWidgetRightPadding sets the right padding of the Skeleton.
 func (s *Skeleton) SetWidgetRightPadding(padding int) *Skeleton {
 	s.widget.SetRightPadding(padding)
+	s.triggerUpdate()
 	return s
 }
 
-func (s *Skeleton) SetLockTabs(lock bool) *Skeleton {
-	s.header.SetLockTabs(lock)
-	s.lockTabs = lock
+func (s *Skeleton) LockTabs() *Skeleton {
+	s.header.SetLockTabs(true)
+	s.lockTabs = true
+	s.triggerUpdate()
 	return s
 }
 
-func (s *Skeleton) GetLockTabs() bool {
+func (s *Skeleton) UnlockTabs() *Skeleton {
+	s.header.SetLockTabs(false)
+	s.lockTabs = false
+	s.triggerUpdate()
+	return s
+}
+
+func (s *Skeleton) IsTabsLocked() bool {
 	return s.lockTabs
 }
 
@@ -233,9 +262,16 @@ func (s *Skeleton) DeleteWidget(key string) *Skeleton {
 	return s
 }
 
-func (s *Skeleton) SetCurrentTab(tab int) *Skeleton {
-	s.currentTab = tab
-	s.header.SetCurrentTab(tab)
+// SetActivePage sets the active page by the given key.
+func (s *Skeleton) SetActivePage(key string) *Skeleton {
+	for i, header := range s.header.headers {
+		if header.key == key {
+			s.currentTab = i
+			s.header.SetCurrentTab(i)
+			s.triggerUpdate()
+			break
+		}
+	}
 	return s
 }
 
@@ -274,11 +310,11 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 		case key.Matches(msg, s.KeyMap.Quit):
 			return s, tea.Quit
 		case key.Matches(msg, s.KeyMap.SwitchTabLeft):
-			if !s.GetLockTabs() {
+			if !s.IsTabsLocked() {
 				s.currentTab = max(s.currentTab-1, 0)
 			}
 		case key.Matches(msg, s.KeyMap.SwitchTabRight):
-			if !s.GetLockTabs() {
+			if !s.IsTabsLocked() {
 				s.currentTab = min(s.currentTab+1, len(s.pages)-1)
 			}
 		}
@@ -288,6 +324,8 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 		s.updatePageTitle(msg.Key, msg.Title)
 	case DeletePage:
 		s.deletePage(msg.Key, msg.SwitchCurrentPageAfterDelete)
+	case DummyMsg:
+		// do nothing, just to trigger the update
 	}
 
 	s.header, cmd = s.header.Update(msg)
