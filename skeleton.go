@@ -107,11 +107,26 @@ func (s *Skeleton) SetBorderColor(color string) *Skeleton {
 	return s
 }
 
+// GetBorderColor returns the border color of the Skeleton.
+func (s *Skeleton) GetBorderColor() string {
+	return s.properties.borderColor
+}
+
+// GetWidgetBorderColor returns the border color of the Widget.
+func (s *Skeleton) GetWidgetBorderColor() string {
+	return s.widget.GetBorderColor()
+}
+
 // SetPagePosition sets the position of the page.
 func (s *Skeleton) SetPagePosition(position lipgloss.Position) *Skeleton {
 	s.properties.pagePosition = position
 	s.triggerUpdate()
 	return s
+}
+
+// GetPagePosition returns the position of the page.
+func (s *Skeleton) GetPagePosition() lipgloss.Position {
+	return s.properties.pagePosition
 }
 
 // SetInactiveTabTextColor sets the idle tab color of the Skeleton.
@@ -260,17 +275,13 @@ func (s *Skeleton) updatePageTitle(key string, title string) {
 type DeletePage struct {
 	// Key is unique key of the page, it is used to identify the page
 	Key string
-
-	// SwitchCurrentPageAfterDelete is the key of the page to switch after delete the page
-	SwitchCurrentPageAfterDelete string
 }
 
 // DeletePage deletes the page by the given key.
-func (s *Skeleton) DeletePage(key string, switchCurrentPageAfterDelete string) *Skeleton {
+func (s *Skeleton) DeletePage(key string) *Skeleton {
 	go func() {
 		s.updateChan <- DeletePage{
-			Key:                          key,
-			SwitchCurrentPageAfterDelete: switchCurrentPageAfterDelete,
+			Key: key,
 		}
 	}()
 
@@ -278,10 +289,16 @@ func (s *Skeleton) DeletePage(key string, switchCurrentPageAfterDelete string) *
 }
 
 // deletePage deletes the page by the given key.
-func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
+func (s *Skeleton) deletePage(key string) {
 	if len(s.pages) == 1 {
 		// skeleton should have at least one page
 		return
+	}
+
+	// if active tab is about deleting tab, switch to the first tab
+	if s.GetActivePage() == key {
+		s.currentTab = 0
+		s.header.SetCurrentTab(0)
 	}
 
 	var pages []tea.Model
@@ -292,19 +309,6 @@ func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
 	}
 	s.header.DeleteCommonHeader(key)
 	s.pages = pages
-
-	// if switchCurrentPageAfterDelete is not empty, switch to the page by the given key
-	if switchCurrentPageAfterDelete != "" {
-		for i := range s.pages {
-			if s.header.headers[i].key == switchCurrentPageAfterDelete {
-				s.currentTab = i
-				s.header.SetCurrentTab(i)
-				break
-			}
-		}
-	}
-
-	// should kill and close channel of the page
 }
 
 // AddWidget adds a new widget to the Skeleton.
@@ -325,6 +329,12 @@ func (s *Skeleton) DeleteWidget(key string) *Skeleton {
 	return s
 }
 
+// DeleteAllWidgets deletes all the widgets.
+func (s *Skeleton) DeleteAllWidgets() *Skeleton {
+	s.widget.DeleteAllWidgets()
+	return s
+}
+
 // SetActivePage sets the active page by the given key.
 func (s *Skeleton) SetActivePage(key string) *Skeleton {
 	for i, header := range s.header.headers {
@@ -336,6 +346,11 @@ func (s *Skeleton) SetActivePage(key string) *Skeleton {
 		}
 	}
 	return s
+}
+
+// GetActivePage returns the active page key.
+func (s *Skeleton) GetActivePage() string {
+	return s.header.headers[s.currentTab].key
 }
 
 func (s *Skeleton) Init() tea.Cmd {
@@ -386,7 +401,7 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 	case UpdatePageTitle:
 		s.updatePageTitle(msg.Key, msg.Title)
 	case DeletePage:
-		s.deletePage(msg.Key, msg.SwitchCurrentPageAfterDelete)
+		s.deletePage(msg.Key)
 	case DummyMsg:
 		// do nothing, just to trigger the update
 	case HeaderSizeMsg:

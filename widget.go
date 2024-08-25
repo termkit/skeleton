@@ -72,10 +72,20 @@ func (w *widget) SetBorderColor(color string) *widget {
 	return w
 }
 
+// GetBorderColor returns the border color of the Widget.
+func (w *widget) GetBorderColor() string {
+	return w.properties.borderColor
+}
+
 // SetWidgetBorderColor sets the border color of the Widget.
 func (w *widget) SetWidgetBorderColor(color string) *widget {
 	w.properties.widgetStyle = w.properties.widgetStyle.BorderForeground(lipgloss.Color(color))
 	return w
+}
+
+// GetWidgetBorderColor returns the border color of the Widget.
+func (w *widget) GetWidgetBorderColor() string {
+	return w.properties.widgetStyle.BorderForeground().String()
 }
 
 // SetLeftPadding sets the left padding of the Widget.
@@ -129,6 +139,12 @@ func (w *widget) DeleteWidget(key string) {
 			Key: key,
 		}
 	}()
+}
+
+// DeleteAllWidgets deletes all the widgets.
+func (w *widget) DeleteAllWidgets() {
+	w.widgets = nil
+	w.calculateWidgetLength()
 }
 
 type AddNewWidget struct {
