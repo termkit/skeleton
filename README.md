@@ -148,7 +148,8 @@ func main() {
 
 ## Skeleton in the Wild
 Some programs that use Skeleton in production:
-- [gama](github.com/termkit/gama): Manage your GitHub Actions from Terminal with great UI 🧪
+
+- [gama](https://github.com/termkit/gama): Manage your GitHub Actions from Terminal with great UI 🧪
 
 ## Documentation
 
