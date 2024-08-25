@@ -61,13 +61,15 @@ func NewSkeleton() *Skeleton {
 
 // skeletonProperties are hold the properties of the Skeleton.
 type skeletonProperties struct {
-	borderColor string
+	borderColor  string
+	pagePosition lipgloss.Position
 }
 
 // defaultSkeletonProperties returns the default properties of the Skeleton.
 func defaultSkeletonProperties() *skeletonProperties {
 	return &skeletonProperties{
-		borderColor: "39",
+		borderColor:  "39",
+		pagePosition: lipgloss.Center,
 	}
 }
 
@@ -101,6 +103,13 @@ func (s *Skeleton) SetBorderColor(color string) *Skeleton {
 	s.header.SetBorderColor(color)
 	s.widget.SetBorderColor(color)
 	s.properties.borderColor = color
+	s.triggerUpdate()
+	return s
+}
+
+// SetPagePosition sets the position of the page.
+func (s *Skeleton) SetPagePosition(position lipgloss.Position) *Skeleton {
+	s.properties.pagePosition = position
 	s.triggerUpdate()
 	return s
 }
@@ -413,7 +422,7 @@ func (s *Skeleton) View() string {
 
 	base := lipgloss.NewStyle().
 		BorderForeground(lipgloss.Color(s.properties.borderColor)).
-		Align(lipgloss.Center).
+		Align(s.properties.pagePosition).
 		Border(lipgloss.RoundedBorder()).
 		BorderTop(false).BorderBottom(false).
 		Width(s.viewport.Width - 2)
