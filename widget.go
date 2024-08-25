@@ -163,12 +163,7 @@ type DeleteWidget struct {
 
 func (w *widget) Listen() tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case o := <-w.updateChan:
-			return o
-		default:
-			return <-w.updateChan
-		}
+		return <-w.updateChan
 	}
 }
 
