@@ -429,7 +429,7 @@ func (s *Skeleton) View() string {
 
 	body := s.pages[s.currentTab].View()
 
-	bodyHeight := s.viewport.Height - 5 // 6 is the header height and Value height
+	bodyHeight := s.viewport.Height - 5 // for header height and Value height
 	if len(s.widget.widgets) > 0 {
 		bodyHeight -= 1
 	}
