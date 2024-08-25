@@ -6,5 +6,6 @@ You can switch tabs with `ctrl+left` and `ctrl+right` keys. \
 You can exit the application by pressing `ctrl+c` keys. \
 `Note: You can override the default key bindings by providing your own key bindings.`
 
-![Fundamental Skeleton](./fundamental-skeleton/demo.gif)
-
+<a href="./fundamental-skeleton/main.go">
+  <img width="750" src="./fundamental-skeleton/demo.gif" />
+</a>
