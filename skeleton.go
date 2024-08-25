@@ -313,7 +313,13 @@ func (s *Skeleton) AddWidget(key string, value string) *Skeleton {
 }
 
 // UpdateWidgetValue updates the Value content by the given key.
+// Adds the widget if it doesn't exist.
 func (s *Skeleton) UpdateWidgetValue(key string, value string) *Skeleton {
+	// if widget not exists, add it
+	if s.widget.GetWidget(key) == nil {
+		s.widget.AddWidget(key, value)
+	}
+
 	s.widget.UpdateWidgetValue(key, value)
 	return s
 }
@@ -363,6 +369,16 @@ func (s *Skeleton) Init() tea.Cmd {
 	return tea.Batch(inits...)
 }
 
+// IAMActivePage is a message to trigger the update of the active page.
+type IAMActivePage struct{}
+
+// IAMActivePageCmd returns the IAMActivePage command.
+func (s *Skeleton) IAMActivePageCmd() tea.Cmd {
+	return func() tea.Msg {
+		return IAMActivePage{}
+	}
+}
+
 func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
@@ -385,10 +401,12 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 		case key.Matches(msg, s.KeyMap.SwitchTabLeft):
 			if !s.IsTabsLocked() {
 				s.currentTab = max(s.currentTab-1, 0)
+				cmds = append(cmds, s.IAMActivePageCmd())
 			}
 		case key.Matches(msg, s.KeyMap.SwitchTabRight):
 			if !s.IsTabsLocked() {
 				s.currentTab = min(s.currentTab+1, len(s.pages)-1)
+				cmds = append(cmds, s.IAMActivePageCmd())
 			}
 		}
 	case AddPage:
@@ -397,6 +415,7 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 		s.updatePageTitle(msg.Key, msg.Title)
 	case DeletePage:
 		s.deletePage(msg.Key)
+		cmds = append(cmds, s.IAMActivePageCmd())
 	case DummyMsg:
 		// do nothing, just to trigger the update
 	case HeaderSizeMsg:
