@@ -24,6 +24,3 @@ go.work.sum
 # ide data
 .idea
 .vscode
-
-# examples
-examples
