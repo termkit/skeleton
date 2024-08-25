@@ -10,17 +10,34 @@ import (
 
 // Skeleton is a helper for rendering the Skeleton of the terminal.
 type Skeleton struct {
+	// termReady is control terminal is ready or not, it responsible for the terminal size
 	termReady bool
 
-	viewport *viewport.Model
+	// termSizeNotEnoughToHandleHeaders is control terminal size is enough to handle headers
+	termSizeNotEnoughToHandleHeaders bool
 
-	lockTabs   bool
+	// termSizeNotEnoughToHandleWidgets is control terminal size is enough to handle widgets
+	termSizeNotEnoughToHandleWidgets bool
+
+	// lockTabs is control the tabs (headers) are locked or not
+	lockTabs bool
+
+	// currentTab is hold the current tab index
 	currentTab int
 
+	// viewport is hold the viewport, it responsible for the terminal size
+	viewport *viewport.Model
+
+	// header is hold the header
 	header *header
+
+	// widget is hold the widget
 	widget *widget
+
+	// KeyMap responsible for the key bindings
 	KeyMap *keyMap
 
+	// pages are hold the pages
 	pages []tea.Model
 
 	// properties are hold the properties of the Skeleton
@@ -42,16 +59,21 @@ func NewSkeleton() *Skeleton {
 	}
 }
 
+// skeletonProperties are hold the properties of the Skeleton.
 type skeletonProperties struct {
 	borderColor string
 }
 
+// defaultSkeletonProperties returns the default properties of the Skeleton.
 func defaultSkeletonProperties() *skeletonProperties {
 	return &skeletonProperties{
 		borderColor: "39",
 	}
 }
 
+// Listen returns the update channel.
+// It listens to the update channel and returns the message.
+// If there is no message, it waits for the message.
 func (s *Skeleton) Listen() tea.Cmd {
 	return func() tea.Msg {
 		select {
@@ -146,6 +168,7 @@ func (s *Skeleton) SetWidgetRightPadding(padding int) *Skeleton {
 	return s
 }
 
+// LockTabs locks the tabs (headers). It prevents switching tabs. It is useful when you want to prevent switching tabs.
 func (s *Skeleton) LockTabs() *Skeleton {
 	s.header.SetLockTabs(true)
 	s.lockTabs = true
@@ -153,6 +176,7 @@ func (s *Skeleton) LockTabs() *Skeleton {
 	return s
 }
 
+// UnlockTabs unlocks the tabs (headers). It allows switching tabs. It is useful when you want to allow switching tabs.
 func (s *Skeleton) UnlockTabs() *Skeleton {
 	s.header.SetLockTabs(false)
 	s.lockTabs = false
@@ -160,17 +184,32 @@ func (s *Skeleton) UnlockTabs() *Skeleton {
 	return s
 }
 
+// IsTabsLocked returns the tabs (headers) are locked or not.
 func (s *Skeleton) IsTabsLocked() bool {
 	return s.lockTabs
 }
 
+// AddPage adds a new page to the Skeleton.
 type AddPage struct {
-	Key   string
+	// Key is unique key of the page, it is used to identify the page
+	Key string
+
+	// Title is the title of the page, it is used to show the title on the header
 	Title string
-	Page  tea.Model
+
+	// Page is the page model, it is used to show the content of the page
+	Page tea.Model
 }
 
+// AddPage adds a new page to the Skeleton.
 func (s *Skeleton) AddPage(key string, title string, page tea.Model) *Skeleton {
+	// do not add if key already exists
+	for _, hdr := range s.header.headers {
+		if hdr.key == key {
+			return s
+		}
+	}
+
 	s.header.AddCommonHeader(key, title)
 	s.pages = append(s.pages, page)
 	go func() {
@@ -183,8 +222,12 @@ func (s *Skeleton) AddPage(key string, title string, page tea.Model) *Skeleton {
 	return s
 }
 
+// UpdatePageTitle updates the title of the page by the given key.
 type UpdatePageTitle struct {
-	Key   string
+	// Key is unique key of the page, it is used to identify the page
+	Key string
+
+	// Title is the title of the page, it is used to show the title on the header
 	Title string
 }
 
@@ -199,12 +242,17 @@ func (s *Skeleton) UpdatePageTitle(key string, title string) *Skeleton {
 	return s
 }
 
+// updatePageTitle updates the title of the page by the given key.
 func (s *Skeleton) updatePageTitle(key string, title string) {
 	s.header.UpdateCommonHeader(key, title)
 }
 
+// DeletePage deletes the page by the given key.
 type DeletePage struct {
-	Key                          string
+	// Key is unique key of the page, it is used to identify the page
+	Key string
+
+	// SwitchCurrentPageAfterDelete is the key of the page to switch after delete the page
 	SwitchCurrentPageAfterDelete string
 }
 
@@ -220,6 +268,7 @@ func (s *Skeleton) DeletePage(key string, switchCurrentPageAfterDelete string) *
 	return s
 }
 
+// deletePage deletes the page by the given key.
 func (s *Skeleton) deletePage(key string, switchCurrentPageAfterDelete string) {
 	if len(s.pages) == 1 {
 		// skeleton should have at least one page
@@ -331,6 +380,10 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 		s.deletePage(msg.Key, msg.SwitchCurrentPageAfterDelete)
 	case DummyMsg:
 		// do nothing, just to trigger the update
+	case HeaderSizeMsg:
+		s.termSizeNotEnoughToHandleHeaders = msg.NotEnoughToHandleHeaders
+	case WidgetSizeMsg:
+		s.termSizeNotEnoughToHandleWidgets = msg.NotEnoughToHandleWidgets
 	}
 
 	s.header, cmd = s.header.Update(msg)
@@ -350,6 +403,12 @@ func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
 func (s *Skeleton) View() string {
 	if !s.termReady {
 		return "setting up terminal..."
+	}
+	if !s.termSizeNotEnoughToHandleHeaders {
+		return "terminal size is not enough to show headers"
+	}
+	if !s.termSizeNotEnoughToHandleWidgets {
+		return "terminal size is not enough to show widgets"
 	}
 
 	base := lipgloss.NewStyle().

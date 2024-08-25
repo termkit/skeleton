@@ -10,18 +10,32 @@ import (
 
 // header is a helper for rendering the header of the terminal.
 type header struct {
+	// termReady is control terminal is ready or not, it responsible for the terminal size
 	termReady bool
-	viewport  *viewport.Model
 
-	lockTabs   bool
+	// lockTabs is control the tabs (headers) are locked or not
+	lockTabs bool
+
+	// currentTab is hold the current tab index
 	currentTab int
 
+	// viewport is hold the viewport, it is responsible for the terminal size
+	viewport *viewport.Model
+
+	// keyMap responsible for the key bindings
 	keyMap *keyMap
 
+	// headers are hold the headers of the terminal
 	headers []commonHeader
 
 	// properties are hold the properties of the header
 	properties *headerProperties
+
+	// titleLength is hold the length of the title
+	titleLength int
+
+	// updateChan is hold the update channel
+	updateChan chan any
 }
 
 // newHeader returns a new header.
@@ -31,9 +45,11 @@ func newHeader() *header {
 		viewport:   newTerminalViewport(),
 		currentTab: 0,
 		keyMap:     newKeyMap(),
+		updateChan: make(chan any),
 	}
 }
 
+// headerProperties are hold the properties of the header.
 type headerProperties struct {
 	borderColor        string
 	leftTabPadding     int
@@ -43,6 +59,7 @@ type headerProperties struct {
 	titleStyleDisabled lipgloss.Style
 }
 
+// defaultHeaderProperties returns the default properties of the header.
 func defaultHeaderProperties() *headerProperties {
 	borderColor := "39"
 	leftPadding := 2
@@ -78,16 +95,19 @@ func defaultHeaderProperties() *headerProperties {
 	}
 }
 
+// commonHeader is hold the header required fields.
 type commonHeader struct {
 	key   string
 	title string
 }
 
 func (h *header) Init() tea.Cmd {
-	return nil
+	return h.Listen()
+	//return nil
 }
 
 func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
+	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		if !h.termReady {
@@ -98,6 +118,7 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 		h.viewport.Width = msg.Width
 		h.viewport.Height = msg.Height
 
+		h.calculateTitleLength()
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, h.keyMap.SwitchTabLeft):
@@ -111,7 +132,56 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 		}
 	}
 
-	return h, nil
+	cmds = append(cmds, h.Listen())
+
+	return h, tea.Batch(cmds...)
+}
+
+// Listen returns the update channel.
+// It listens to the update channel and returns the message.
+// If there is no message, it waits for the message.
+func (h *header) Listen() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case o := <-h.updateChan:
+			return o
+		default:
+			return <-h.updateChan
+		}
+	}
+}
+
+type HeaderSizeMsg struct {
+	NotEnoughToHandleHeaders bool
+}
+
+// SendIsTerminalSizeEnough sends the terminal size is enough to print the headers.
+func (h *header) SendIsTerminalSizeEnough(isEnough bool) {
+	go func() {
+		h.updateChan <- HeaderSizeMsg{
+			NotEnoughToHandleHeaders: isEnough,
+		}
+	}()
+}
+
+// calculateTitleLength calculates the length of the title.
+func (h *header) calculateTitleLength() {
+	var titleLen int
+	for _, hdr := range h.headers {
+		titleLen += len(hdr.title)
+		titleLen += h.properties.leftTabPadding + h.properties.rightTabPadding
+		titleLen += 2 // for the border between titles
+	}
+
+	requiredLineCountForLine := h.viewport.Width - (titleLen + 2)
+
+	if requiredLineCountForLine < 0 {
+		h.SendIsTerminalSizeEnough(false)
+	} else {
+		h.SendIsTerminalSizeEnough(true)
+	}
+
+	h.titleLength = titleLen
 }
 
 // View renders the header.
@@ -120,12 +190,14 @@ func (h *header) View() string {
 		return "setting up terminal..."
 	}
 
-	var titleLen int
-	for _, hdr := range h.headers {
-		titleLen += len(hdr.title)
-		titleLen += h.properties.leftTabPadding + h.properties.rightTabPadding
-		titleLen += 2 // for the border between titles
+	requiredLineCount := h.viewport.Width - (h.titleLength + 2)
+
+	if requiredLineCount < 0 {
+		return ""
 	}
+
+	line := strings.Repeat("─", requiredLineCount)
+	line = lipgloss.NewStyle().Foreground(lipgloss.Color(h.properties.borderColor)).Render(line)
 
 	var renderedTitles []string
 	renderedTitles = append(renderedTitles, "")
@@ -146,9 +218,6 @@ func (h *header) View() string {
 	leftCorner = lipgloss.NewStyle().Foreground(lipgloss.Color(h.properties.borderColor)).Render(leftCorner)
 	rightCorner = lipgloss.NewStyle().Foreground(lipgloss.Color(h.properties.borderColor)).Render(rightCorner)
 
-	line := strings.Repeat("─", h.viewport.Width-(titleLen+2))
-	line = lipgloss.NewStyle().Foreground(lipgloss.Color(h.properties.borderColor)).Render(line)
-
 	return lipgloss.JoinHorizontal(lipgloss.Bottom, leftCorner, lipgloss.JoinHorizontal(lipgloss.Center, append(renderedTitles, line)...), rightCorner)
 }
 
@@ -158,6 +227,8 @@ func (h *header) SetLeftPadding(padding int) {
 	h.properties.titleStyleActive = h.properties.titleStyleActive.PaddingLeft(padding)
 	h.properties.titleStyleInactive = h.properties.titleStyleInactive.PaddingLeft(padding)
 	h.properties.titleStyleDisabled = h.properties.titleStyleDisabled.PaddingLeft(padding)
+
+	h.calculateTitleLength()
 }
 
 // SetRightPadding sets the right padding of the header.
@@ -166,6 +237,8 @@ func (h *header) SetRightPadding(padding int) {
 	h.properties.titleStyleActive = h.properties.titleStyleActive.PaddingRight(padding)
 	h.properties.titleStyleInactive = h.properties.titleStyleInactive.PaddingRight(padding)
 	h.properties.titleStyleDisabled = h.properties.titleStyleDisabled.PaddingRight(padding)
+
+	h.calculateTitleLength()
 }
 
 // SetInactiveTabTextColor sets the idle tab color of the header.
@@ -193,41 +266,51 @@ func (h *header) SetBorderColor(color string) {
 	h.properties.borderColor = color
 }
 
+// SetCurrentTab sets the current tab index.
 func (h *header) SetCurrentTab(tab int) {
 	h.currentTab = tab
 }
 
+// SetLockTabs sets the lock tabs status.
 func (h *header) SetLockTabs(lock bool) {
 	h.lockTabs = lock
 }
 
+// GetLockTabs returns the lock tabs status.
 func (h *header) GetLockTabs() bool {
 	return h.lockTabs
 }
 
+// GetCurrentTab returns the current tab index.
 func (h *header) GetCurrentTab() int {
 	return h.currentTab
 }
 
+// AddCommonHeader adds a new header to the header.
 func (h *header) AddCommonHeader(key string, title string) {
 	h.headers = append(h.headers, commonHeader{
 		key:   key,
 		title: title,
 	})
+	h.calculateTitleLength()
 }
 
+// UpdateCommonHeader updates the header by the given key.
 func (h *header) UpdateCommonHeader(key string, title string) {
 	for i, header := range h.headers {
 		if header.key == key {
 			h.headers[i].title = title
 		}
 	}
+	h.calculateTitleLength()
 }
 
+// DeleteCommonHeader deletes the header by the given key.
 func (h *header) DeleteCommonHeader(key string) {
 	for i, header := range h.headers {
 		if header.key == key {
 			h.headers = append(h.headers[:i], h.headers[i+1:]...)
 		}
 	}
+	h.calculateTitleLength()
 }

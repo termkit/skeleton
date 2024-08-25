@@ -19,6 +19,9 @@ type widget struct {
 	// properties are hold the properties of the widget
 	properties *widgetProperties
 
+	// widgetLength is hold the length of the widget
+	widgetLength int
+
 	// updateChan is hold the update channel
 	updateChan chan any
 }
@@ -163,6 +166,8 @@ func (w *widget) addNewWidget(key, value string) {
 		Key:   key,
 		Value: value,
 	})
+
+	w.calculateWidgetLength()
 }
 
 func (w *widget) updateWidgetContent(key, value string) {
@@ -170,6 +175,8 @@ func (w *widget) updateWidgetContent(key, value string) {
 	if x != nil {
 		x.Value = value
 	}
+
+	w.calculateWidgetLength()
 }
 
 func (w *widget) deleteWidget(key string) {
@@ -179,6 +186,20 @@ func (w *widget) deleteWidget(key string) {
 			break
 		}
 	}
+
+	w.calculateWidgetLength()
+}
+
+type WidgetSizeMsg struct {
+	NotEnoughToHandleWidgets bool
+}
+
+func (w *widget) SendIsTerminalSizeEnough(isEnough bool) {
+	go func() {
+		w.updateChan <- WidgetSizeMsg{
+			NotEnoughToHandleWidgets: isEnough,
+		}
+	}()
 }
 
 func (w *widget) Init() tea.Cmd {
@@ -198,6 +219,7 @@ func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 		w.viewport.Width = msg.Width
 		w.viewport.Height = msg.Height
 
+		w.calculateWidgetLength()
 	case AddNewWidget:
 		w.addNewWidget(msg.Key, msg.Value)
 
@@ -213,17 +235,38 @@ func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 	return w, tea.Batch(cmds...)
 }
 
-func (w *widget) View() string {
-	if !w.termReady {
-		return "setting up terminal..."
-	}
-
+// calculateWidgetLength calculates the length of the widgets.
+func (w *widget) calculateWidgetLength() {
 	var widgetLen int
 	for _, widget := range w.widgets {
 		widgetLen += len(widget.Value)
 		widgetLen += w.properties.leftTabPadding + w.properties.rightTabPadding
 		widgetLen += 2 // for the border between widgets
 	}
+
+	requiredLineCount := w.viewport.Width - (widgetLen + 2)
+	if requiredLineCount < 0 {
+		w.SendIsTerminalSizeEnough(false)
+	} else {
+		w.SendIsTerminalSizeEnough(true)
+	}
+
+	w.widgetLength = widgetLen
+}
+
+func (w *widget) View() string {
+	if !w.termReady {
+		return "setting up terminal..."
+	}
+
+	requiredLineCount := w.viewport.Width - (w.widgetLength + 2)
+
+	if requiredLineCount < 0 {
+		return ""
+	}
+
+	line := strings.Repeat("─", requiredLineCount)
+	line = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(line)
 
 	var renderedWidgets []string
 	for _, wgt := range w.widgets {
@@ -234,9 +277,6 @@ func (w *widget) View() string {
 	rightCorner := lipgloss.JoinVertical(lipgloss.Top, "│", "╯")
 	leftCorner = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(leftCorner)
 	rightCorner = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(rightCorner)
-
-	line := strings.Repeat("─", w.viewport.Width-(widgetLen+2))
-	line = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(line)
 
 	var bottom []string
 	bottom = append(bottom, line)
