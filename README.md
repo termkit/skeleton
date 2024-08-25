@@ -2,6 +2,8 @@
 
 **Skeleton** is a Go library built on top of the [Bubble Tea](https://github.com/charmbracelet/bubbletea) framework designed to simplify the development of multi-tab terminal user interface (TUI) applications.
 
+**Caution: This project is under active development and may have breaking changes for a while.**
+
 <a href="https://github.com/termkit/skeleton" target="_blank"><img src="https://img.shields.io/github/go-mod/go-version/termkit/skeleton?style=for-the-badge&logo=go" alt="Skeleton Go Version" /></a>
 <a href="https://goreportcard.com/report/github.com/termkit/skeleton" target="_blank"><img src="https://goreportcard.com/badge/github.com/termkit/skeleton?style=for-the-badge&logo=go" alt="Skeleton Go Report Card" /></a>
 <a href="https://github.com/termkit/skeleton" target="_blank"><img src="https://img.shields.io/github/license/termkit/skeleton?style=for-the-badge" alt="Skeleton Licence" /></a>
