@@ -78,12 +78,7 @@ func defaultSkeletonProperties() *skeletonProperties {
 // If there is no message, it waits for the message.
 func (s *Skeleton) Listen() tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case o := <-s.updateChan:
-			return o
-		default:
-			return <-s.updateChan
-		}
+		return <-s.updateChan
 	}
 }
 

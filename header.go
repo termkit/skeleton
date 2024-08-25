@@ -142,12 +142,7 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 // If there is no message, it waits for the message.
 func (h *header) Listen() tea.Cmd {
 	return func() tea.Msg {
-		select {
-		case o := <-h.updateChan:
-			return o
-		default:
-			return <-h.updateChan
-		}
+		return <-h.updateChan
 	}
 }
 
