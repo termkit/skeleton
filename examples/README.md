@@ -15,5 +15,5 @@ Basic file reader example using the `skeleton` package. \
 Keys: `ctrl+left` and `ctrl+right` to switch tabs, `ctrl+w` to close the tab, `ctrl+c` to exit the application.
 
 <a href="./file-reader/main.go">
-  <img width="500" src="./file-reader/demo.gif" />
+  <img width="550" src="./file-reader/demo.gif" />
 </a>
