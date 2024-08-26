@@ -8,6 +8,8 @@
 <a href="https://goreportcard.com/report/github.com/termkit/skeleton" target="_blank"><img src="https://goreportcard.com/badge/github.com/termkit/skeleton?style=for-the-badge&logo=go" alt="Skeleton Go Report Card" /></a>
 <a href="https://github.com/termkit/skeleton" target="_blank"><img src="https://img.shields.io/github/license/termkit/skeleton?style=for-the-badge" alt="Skeleton Licence" /></a>
 
+![Skeleton](main.gif)
+
 ## Features
 
 - **Multi-tab Support**: Easily create and manage multiple tabs in your terminal application, similar to browser tabs.
