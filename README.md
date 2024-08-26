@@ -47,6 +47,7 @@ import (
 	"strings"
 
 	"github.com/termkit/skeleton"
+	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -113,6 +114,15 @@ func main() {
 	skel.AddPage("first", "First Tab", newTinyModel(skel, "First"))
 	skel.AddPage("second", "Second Tab", newTinyModel(skel, "Second"))
 	skel.AddPage("third", "Third Tab", newTinyModel(skel, "Third"))
+
+	// Set up key bindings ( Optional | Defaults: ctrl+left, ctrl+right )
+	//To switch next page
+	skel.KeyMap.SwitchTabRight = key.NewBinding(
+		key.WithKeys("shift+right"))
+
+	// To switch previous page
+	skel.KeyMap.SwitchTabLeft = key.NewBinding(
+		key.WithKeys("shift+left"))
 
 	// Add a widget to entire screen
 	skel.AddWidget("battery", "Battery %92")
