@@ -354,21 +354,6 @@ func (s *Skeleton) GetActivePage() string {
 	return s.header.headers[s.currentTab].key
 }
 
-func (s *Skeleton) Init() tea.Cmd {
-	if len(s.pages) == 0 {
-		panic("skeleton: no pages added, please add at least one page")
-	}
-
-	inits := make([]tea.Cmd, 3) // 3 for (self, header, Value)
-
-	// and init self, header and Value
-	inits[0] = s.Listen()
-	inits[1] = s.header.Init()
-	inits[2] = s.widget.Init()
-
-	return tea.Batch(inits...)
-}
-
 // IAMActivePage is a message to trigger the update of the active page.
 type IAMActivePage struct{}
 
@@ -379,7 +364,15 @@ func (s *Skeleton) IAMActivePageCmd() tea.Cmd {
 	}
 }
 
-func (s *Skeleton) Update(msg tea.Msg) (*Skeleton, tea.Cmd) {
+func (s *Skeleton) Init() tea.Cmd {
+	if len(s.pages) == 0 {
+		panic("skeleton: no pages added, please add at least one page")
+	}
+
+	return tea.Batch(s.Listen(), s.header.Init(), s.widget.Init())
+}
+
+func (s *Skeleton) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd
 
