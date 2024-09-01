@@ -28,7 +28,9 @@ func newTinyModel(skeleton *skeleton.Skeleton, title string) *tinyModel {
 	}
 }
 
-func (m tinyModel) Init() tea.Cmd { return nil }
+func (m tinyModel) Init() tea.Cmd {
+	return nil
+}
 func (m tinyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
@@ -40,60 +42,32 @@ func (m tinyModel) View() string {
 }
 
 // -----------------------------------------------------------------------------
-// Main Model
-// The Main Model is the main model for the program. It contains the skeleton and the tab models.
-
-type mainModel struct {
-	skeleton *skeleton.Skeleton
-}
-
-func (m *mainModel) Init() tea.Cmd {
-	return tea.Batch(
-		tea.EnterAltScreen,
-		tea.SetWindowTitle("Basic Tab Example"),
-		m.skeleton.Init(),
-	)
-}
-
-func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	m.skeleton, cmd = m.skeleton.Update(msg)
-	return m, cmd
-}
-
-func (m *mainModel) View() string {
-	return m.skeleton.View()
-}
-
+// Main Program
 func main() {
-	skel := skeleton.NewSkeleton()
+	s := skeleton.NewSkeleton()
 
 	// Add tabs (pages)
-	skel.AddPage("first", "First Tab", newTinyModel(skel, "First"))
-	skel.AddPage("second", "Second Tab", newTinyModel(skel, "Second"))
-	skel.AddPage("third", "Third Tab", newTinyModel(skel, "Third"))
+	s.AddPage("first", "First Tab", newTinyModel(s, "First"))
+	s.AddPage("second", "Second Tab", newTinyModel(s, "Second"))
+	s.AddPage("third", "Third Tab", newTinyModel(s, "Third"))
 
-	// Add a widget to entire screen
+	// Add a widget to entire screen ( Optional )
 	// Battery level is hardcoded. You can use a library to get the battery level of your system.
-	skel.AddWidget("battery", "Battery %92") // Add a widget to entire screen
+	s.AddWidget("battery", "Battery %92") // Add a widget to entire screen
 
-	// Add current time
-	skel.AddWidget("time", time.Now().Format("15:04:05"))
+	// Add current time ( Optional )
+	s.AddWidget("time", time.Now().Format("15:04:05"))
 
-	// Update the time widget every second
+	// Update the time widget every second ( Optional )
 	go func() {
 		time.Sleep(time.Second)
 		for {
-			skel.UpdateWidgetValue("time", time.Now().Format("15:04:05"))
+			s.UpdateWidgetValue("time", time.Now().Format("15:04:05"))
 			time.Sleep(time.Second)
 		}
 	}()
 
-	model := &mainModel{
-		skeleton: skel,
-	}
-
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(s)
 	if err := p.Start(); err != nil {
 		panic(err)
 	}

@@ -53,11 +53,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// -----------------------------------------------------------------------------
+// Tiny Model
+// The Tiny Model is a sub-model for the tabs. It's a simple model that just shows the title of the tab.
+
+// tinyModel is a sub-model for the tabs
 type tinyModel struct {
 	skeleton *skeleton.Skeleton
 	title    string
 }
 
+// newTinyModel returns a new tinyModel
 func newTinyModel(skeleton *skeleton.Skeleton, title string) *tinyModel {
 	return &tinyModel{
 		skeleton: skeleton,
@@ -65,7 +71,9 @@ func newTinyModel(skeleton *skeleton.Skeleton, title string) *tinyModel {
 	}
 }
 
-func (m tinyModel) Init() tea.Cmd { return nil }
+func (m tinyModel) Init() tea.Cmd {
+	return nil
+}
 func (m tinyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
@@ -76,74 +84,44 @@ func (m tinyModel) View() string {
 }
 ````
 
-#### 2. Create the Main Model
-
-Next, define the main model that will handle the overall application state and interact with Skeleton:
-
-````go
-type mainModel struct {
-	skeleton *skeleton.Skeleton
-}
-
-func (m *mainModel) Init() tea.Cmd {
-	return tea.Batch(
-		tea.EnterAltScreen,
-		tea.SetWindowTitle("Basic Tab Example"),
-		m.skeleton.Init(), // Initialize the skeleton
-	)
-}
-
-func (m *mainModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
-	m.skeleton, cmd = m.skeleton.Update(msg)
-	return m, cmd
-}
-
-func (m *mainModel) View() string {
-	return m.skeleton.View()
-}
-````
-
-#### 3. Set Up the Application
+#### 2. Set Up the Application
 
 Initialize Skeleton, add pages, and configure widgets:
 
 ````go
+// -----------------------------------------------------------------------------
+// Main Program
 func main() {
-	skel := skeleton.NewSkeleton()
+	s := skeleton.NewSkeleton()
 
 	// Add tabs (pages)
-	skel.AddPage("first", "First Tab", newTinyModel(skel, "First"))
-	skel.AddPage("second", "Second Tab", newTinyModel(skel, "Second"))
-	skel.AddPage("third", "Third Tab", newTinyModel(skel, "Third"))
+	s.AddPage("first", "First Tab", newTinyModel(s, "First"))
+	s.AddPage("second", "Second Tab", newTinyModel(s, "Second"))
+	s.AddPage("third", "Third Tab", newTinyModel(s, "Third"))
 
 	// Set up key bindings ( Optional | Defaults: ctrl+left, ctrl+right )
 	//To switch next page
-	skel.KeyMap.SwitchTabRight = key.NewBinding(
+	s.KeyMap.SwitchTabRight = key.NewBinding(
 		key.WithKeys("shift+right"))
 
 	// To switch previous page
-	skel.KeyMap.SwitchTabLeft = key.NewBinding(
+	s.KeyMap.SwitchTabLeft = key.NewBinding(
 		key.WithKeys("shift+left"))
 
 	// Add a widget to entire screen
-	skel.AddWidget("battery", "Battery %92")
-	skel.AddWidget("time", time.Now().Format("15:04:05"))
+	s.AddWidget("battery", "Battery %92")
+	s.AddWidget("time", time.Now().Format("15:04:05"))
 
 	// Update the time widget every second
 	go func() {
 		time.Sleep(time.Second)
 		for {
-			skel.UpdateWidgetValue("time", time.Now().Format("15:04:05"))
+			s.UpdateWidgetValue("time", time.Now().Format("15:04:05"))
 			time.Sleep(time.Second)
 		}
 	}()
 
-	model := &mainModel{
-		skeleton: skel,
-	}
-
-	p := tea.NewProgram(model)
+	p := tea.NewProgram(s)
 	if err := p.Start(); err != nil {
 		panic(err)
 	}
@@ -154,9 +132,7 @@ func main() {
 
 1. **Model Definition**: `tinyModel` represents the content of each tab. It uses the Skeleton instance to query terminal dimensions and display information.
 
-2. **Main Model**: `mainModel` integrates Skeleton and handles application state updates and rendering.
-
-3. **Application Setup**: The `main` function initializes Skeleton, adds pages, and sets up widgets. The time widget updates every second to reflect the current time.
+2. **Application Setup**: The `main` function initializes Skeleton, adds pages, and sets up widgets. The time widget updates every second to reflect the current time.
 
 ## Skeleton in the Wild
 Some programs that use Skeleton in production:
