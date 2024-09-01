@@ -103,7 +103,6 @@ type commonHeader struct {
 
 func (h *header) Init() tea.Cmd {
 	return h.Listen()
-	//return nil
 }
 
 func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
