@@ -279,9 +279,9 @@ func (w *widget) View() string {
 	line := strings.Repeat("─", requiredLineCount)
 	line = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(line)
 
-	var renderedWidgets []string
-	for _, wgt := range w.widgets {
-		renderedWidgets = append(renderedWidgets, w.properties.widgetStyle.Render(wgt.Value))
+	var renderedWidgets = make([]string, len(w.widgets))
+	for i, wgt := range w.widgets {
+		renderedWidgets[i] = w.properties.widgetStyle.Render(wgt.Value)
 	}
 
 	leftCorner := lipgloss.JoinVertical(lipgloss.Top, "│", "╰")
