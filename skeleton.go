@@ -364,6 +364,20 @@ func (s *Skeleton) IAMActivePageCmd() tea.Cmd {
 	}
 }
 
+func (s *Skeleton) updateSkeleton(msg tea.Msg, cmd tea.Cmd, cmds []tea.Cmd) []tea.Cmd {
+	s.header, cmd = s.header.Update(msg)
+	cmds = append(cmds, cmd)
+
+	s.widget, cmd = s.widget.Update(msg)
+	cmds = append(cmds, cmd)
+
+	s.pages[s.currentTab], cmd = s.pages[s.currentTab].Update(msg)
+	cmds = append(cmds, cmd)
+
+	cmds = append(cmds, s.Listen()) // listen to the update channel
+	return cmds
+}
+
 func (s *Skeleton) Init() tea.Cmd {
 	if len(s.pages) == 0 {
 		panic("skeleton: no pages added, please add at least one page")
@@ -387,46 +401,40 @@ func (s *Skeleton) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		s.viewport.Width = msg.Width
 		s.viewport.Height = msg.Height
+
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, s.KeyMap.Quit):
 			return s, tea.Quit
 		case key.Matches(msg, s.KeyMap.SwitchTabLeft):
-			if !s.IsTabsLocked() {
-				s.currentTab = max(s.currentTab-1, 0)
-				cmds = append(cmds, s.IAMActivePageCmd())
-			}
+			cmds = s.switchPage(cmds, "left")
 		case key.Matches(msg, s.KeyMap.SwitchTabRight):
-			if !s.IsTabsLocked() {
-				s.currentTab = min(s.currentTab+1, len(s.pages)-1)
-				cmds = append(cmds, s.IAMActivePageCmd())
-			}
+			cmds = s.switchPage(cmds, "right")
 		}
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case AddPage:
 		cmds = append(cmds, msg.Page.Init()) // init the page
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case UpdatePageTitle:
 		s.updatePageTitle(msg.Key, msg.Title)
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case DeletePage:
 		s.deletePage(msg.Key)
 		cmds = append(cmds, s.IAMActivePageCmd())
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case DummyMsg:
 		// do nothing, just to trigger the update
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	case HeaderSizeMsg:
 		s.termSizeNotEnoughToHandleHeaders = msg.NotEnoughToHandleHeaders
 	case WidgetSizeMsg:
 		s.termSizeNotEnoughToHandleWidgets = msg.NotEnoughToHandleWidgets
+	case AddNewWidget, UpdateWidgetContent, DeleteWidget:
+		cmds = s.updateSkeleton(msg, cmd, cmds)
+	default:
+		cmds = s.updateSkeleton(msg, cmd, cmds)
 	}
-
-	s.header, cmd = s.header.Update(msg)
-	cmds = append(cmds, cmd)
-
-	s.widget, cmd = s.widget.Update(msg)
-	cmds = append(cmds, cmd)
-
-	s.pages[s.currentTab], cmd = s.pages[s.currentTab].Update(msg)
-	cmds = append(cmds, cmd)
-
-	cmds = append(cmds, s.Listen()) // listen to the update channel
 
 	return s, tea.Batch(cmds...)
 }

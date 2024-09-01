@@ -231,17 +231,18 @@ func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 		w.viewport.Height = msg.Height
 
 		w.calculateWidgetLength()
+
+		cmds = append(cmds, w.Listen())
 	case AddNewWidget:
 		w.addNewWidget(msg.Key, msg.Value)
-
+		cmds = append(cmds, w.Listen())
 	case UpdateWidgetContent:
 		w.updateWidgetContent(msg.Key, msg.Value)
-
+		cmds = append(cmds, w.Listen())
 	case DeleteWidget:
 		w.deleteWidget(msg.Key)
+		cmds = append(cmds, w.Listen())
 	}
-
-	cmds = append(cmds, w.Listen())
 
 	return w, tea.Batch(cmds...)
 }
