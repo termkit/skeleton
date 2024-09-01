@@ -53,11 +53,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// -----------------------------------------------------------------------------
+// Tiny Model
+// The Tiny Model is a sub-model for the tabs. It's a simple model that just shows the title of the tab.
+
+// tinyModel is a sub-model for the tabs
 type tinyModel struct {
 	skeleton *skeleton.Skeleton
 	title    string
 }
 
+// newTinyModel returns a new tinyModel
 func newTinyModel(skeleton *skeleton.Skeleton, title string) *tinyModel {
 	return &tinyModel{
 		skeleton: skeleton,
@@ -65,7 +71,9 @@ func newTinyModel(skeleton *skeleton.Skeleton, title string) *tinyModel {
 	}
 }
 
-func (m tinyModel) Init() tea.Cmd { return nil }
+func (m tinyModel) Init() tea.Cmd {
+	return nil
+}
 func (m tinyModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
@@ -81,6 +89,8 @@ func (m tinyModel) View() string {
 Initialize Skeleton, add pages, and configure widgets:
 
 ````go
+// -----------------------------------------------------------------------------
+// Main Program
 func main() {
 	s := skeleton.NewSkeleton()
 
