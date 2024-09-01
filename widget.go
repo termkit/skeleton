@@ -102,15 +102,6 @@ func (w *widget) SetRightPadding(padding int) *widget {
 	return w
 }
 
-func (w *widget) AddWidget(key string, value string) {
-	go func() {
-		w.updateChan <- AddNewWidget{
-			Key:   key,
-			Value: value,
-		}
-	}()
-}
-
 // GetWidget returns the Value by the given key.
 func (w *widget) GetWidget(key string) *commonWidget {
 	for _, widget := range w.widgets {
@@ -120,25 +111,6 @@ func (w *widget) GetWidget(key string) *commonWidget {
 	}
 
 	return nil
-}
-
-// UpdateWidgetValue updates the Value content by the given key.
-func (w *widget) UpdateWidgetValue(key string, value string) {
-	go func() {
-		w.updateChan <- UpdateWidgetContent{
-			Key:   key,
-			Value: value,
-		}
-	}()
-}
-
-// DeleteWidget deletes the Value by the given key.
-func (w *widget) DeleteWidget(key string) {
-	go func() {
-		w.updateChan <- DeleteWidget{
-			Key: key,
-		}
-	}()
 }
 
 // DeleteAllWidgets deletes all the widgets.
@@ -231,17 +203,18 @@ func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 		w.viewport.Height = msg.Height
 
 		w.calculateWidgetLength()
+
+		cmds = append(cmds, w.Listen())
 	case AddNewWidget:
 		w.addNewWidget(msg.Key, msg.Value)
-
+		cmds = append(cmds, w.Listen())
 	case UpdateWidgetContent:
 		w.updateWidgetContent(msg.Key, msg.Value)
-
+		cmds = append(cmds, w.Listen())
 	case DeleteWidget:
 		w.deleteWidget(msg.Key)
+		cmds = append(cmds, w.Listen())
 	}
-
-	cmds = append(cmds, w.Listen())
 
 	return w, tea.Batch(cmds...)
 }
@@ -279,9 +252,9 @@ func (w *widget) View() string {
 	line := strings.Repeat("─", requiredLineCount)
 	line = lipgloss.NewStyle().Foreground(lipgloss.Color(w.properties.borderColor)).Render(line)
 
-	var renderedWidgets []string
-	for _, wgt := range w.widgets {
-		renderedWidgets = append(renderedWidgets, w.properties.widgetStyle.Render(wgt.Value))
+	var renderedWidgets = make([]string, len(w.widgets))
+	for i, wgt := range w.widgets {
+		renderedWidgets[i] = w.properties.widgetStyle.Render(wgt.Value)
 	}
 
 	leftCorner := lipgloss.JoinVertical(lipgloss.Top, "│", "╰")

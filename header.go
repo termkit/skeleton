@@ -103,7 +103,6 @@ type commonHeader struct {
 
 func (h *header) Init() tea.Cmd {
 	return h.Listen()
-	//return nil
 }
 
 func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
@@ -119,6 +118,8 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 		h.viewport.Height = msg.Height
 
 		h.calculateTitleLength()
+
+		cmds = append(cmds, h.Listen())
 	case tea.KeyMsg:
 		switch {
 		case key.Matches(msg, h.keyMap.SwitchTabLeft):
@@ -130,9 +131,9 @@ func (h *header) Update(msg tea.Msg) (*header, tea.Cmd) {
 				h.currentTab = min(h.currentTab+1, len(h.headers)-1)
 			}
 		}
-	}
 
-	cmds = append(cmds, h.Listen())
+		cmds = append(cmds, h.Listen())
+	}
 
 	return h, tea.Batch(cmds...)
 }
