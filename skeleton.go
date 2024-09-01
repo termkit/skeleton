@@ -308,25 +308,41 @@ func (s *Skeleton) deletePage(key string) {
 
 // AddWidget adds a new widget to the Skeleton.
 func (s *Skeleton) AddWidget(key string, value string) *Skeleton {
-	s.widget.AddWidget(key, value)
+	go func() {
+		s.updateChan <- AddNewWidget{
+			Key:   key,
+			Value: value,
+		}
+	}()
 	return s
 }
 
 // UpdateWidgetValue updates the Value content by the given key.
 // Adds the widget if it doesn't exist.
 func (s *Skeleton) UpdateWidgetValue(key string, value string) *Skeleton {
-	// if widget not exists, add it
-	if s.widget.GetWidget(key) == nil {
-		s.widget.AddWidget(key, value)
-	}
+	go func() {
+		// if widget not exists, add it
+		if s.widget.GetWidget(key) == nil {
+			s.AddWidget(key, value)
+		}
 
-	s.widget.UpdateWidgetValue(key, value)
+		s.updateChan <- UpdateWidgetContent{
+			Key:   key,
+			Value: value,
+		}
+	}()
+
 	return s
 }
 
 // DeleteWidget deletes the Value by the given key.
 func (s *Skeleton) DeleteWidget(key string) *Skeleton {
-	s.widget.DeleteWidget(key)
+	go func() {
+		s.updateChan <- DeleteWidget{
+			Key: key,
+		}
+	}()
+
 	return s
 }
 
@@ -362,6 +378,23 @@ func (s *Skeleton) IAMActivePageCmd() tea.Cmd {
 	return func() tea.Msg {
 		return IAMActivePage{}
 	}
+}
+
+func (s *Skeleton) switchPage(cmds []tea.Cmd, position string) []tea.Cmd {
+	switch position {
+	case "left":
+		if !s.IsTabsLocked() {
+			s.currentTab = max(s.currentTab-1, 0)
+			cmds = append(cmds, s.IAMActivePageCmd())
+		}
+	case "right":
+		if !s.IsTabsLocked() {
+			s.currentTab = min(s.currentTab+1, len(s.pages)-1)
+			cmds = append(cmds, s.IAMActivePageCmd())
+		}
+	}
+
+	return cmds
 }
 
 func (s *Skeleton) updateSkeleton(msg tea.Msg, cmd tea.Cmd, cmds []tea.Cmd) []tea.Cmd {

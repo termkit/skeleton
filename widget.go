@@ -102,15 +102,6 @@ func (w *widget) SetRightPadding(padding int) *widget {
 	return w
 }
 
-func (w *widget) AddWidget(key string, value string) {
-	go func() {
-		w.updateChan <- AddNewWidget{
-			Key:   key,
-			Value: value,
-		}
-	}()
-}
-
 // GetWidget returns the Value by the given key.
 func (w *widget) GetWidget(key string) *commonWidget {
 	for _, widget := range w.widgets {
@@ -120,25 +111,6 @@ func (w *widget) GetWidget(key string) *commonWidget {
 	}
 
 	return nil
-}
-
-// UpdateWidgetValue updates the Value content by the given key.
-func (w *widget) UpdateWidgetValue(key string, value string) {
-	go func() {
-		w.updateChan <- UpdateWidgetContent{
-			Key:   key,
-			Value: value,
-		}
-	}()
-}
-
-// DeleteWidget deletes the Value by the given key.
-func (w *widget) DeleteWidget(key string) {
-	go func() {
-		w.updateChan <- DeleteWidget{
-			Key: key,
-		}
-	}()
 }
 
 // DeleteAllWidgets deletes all the widgets.
