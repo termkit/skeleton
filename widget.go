@@ -223,7 +223,7 @@ func (w *widget) Update(msg tea.Msg) (*widget, tea.Cmd) {
 func (w *widget) calculateWidgetLength() {
 	var widgetLen int
 	for _, widget := range w.widgets {
-		widgetLen += len(widget.Value)
+		widgetLen += len([]rune(widget.Value))
 		widgetLen += w.properties.leftTabPadding + w.properties.rightTabPadding
 		widgetLen += 2 // for the border between widgets
 	}

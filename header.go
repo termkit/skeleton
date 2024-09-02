@@ -164,7 +164,7 @@ func (h *header) SendIsTerminalSizeEnough(isEnough bool) {
 func (h *header) calculateTitleLength() {
 	var titleLen int
 	for _, hdr := range h.headers {
-		titleLen += len(hdr.title)
+		titleLen += len([]rune(hdr.title))
 		titleLen += h.properties.leftTabPadding + h.properties.rightTabPadding
 		titleLen += 2 // for the border between titles
 	}
