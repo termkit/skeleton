@@ -24,3 +24,9 @@ go.work.sum
 # ide data
 .idea
 .vscode
+
+# Example executables
+examples/*/file-reader
+examples/*/fundamental-skeleton
+examples/*/news-reader
+examples/*/system-monitor
